@@ -136,6 +136,8 @@ export const bs = {
       'Dostava u gradu i na aerodrom',
     ],
     galleryLabel: 'Fotografije vozila',
+    galleryPrev: 'Prethodna fotografija',
+    galleryNext: 'Sljedeća fotografija',
   },
 
   reserve: {

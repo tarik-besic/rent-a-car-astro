@@ -135,6 +135,8 @@ export const en: Dict = {
       'Delivery in the city and to the airport',
     ],
     galleryLabel: 'Car photos',
+    galleryPrev: 'Previous photo',
+    galleryNext: 'Next photo',
   },
 
   reserve: {

@@ -20,9 +20,11 @@ const d = t(locale);
 
 const related = await getRelatedCars(Astro.locals.runtime.env.DB, car, 3);
 
-const gallery = [car.image, ...car.images].filter(Boolean);
+// `car.image` is already `images[0]` (the cover). Prepending it made every
+// gallery show the first photo twice.
+const gallery = [...new Set(car.images.filter(Boolean))];
 const main = resolveImage(gallery[0] ?? '', { width: 1200, height: 800 });
-const thumbs = gallery.slice(0, 6).map((source) => ({
+const slides = gallery.map((source) => ({
   full: resolveImage(source, { width: 1200, height: 800 }),
   thumb: resolveImage(source, { width: 240, height: 160 }),
 }));
@@ -116,7 +118,7 @@ const reserveHref = `${path('reserve', locale)}?car=${encodeURIComponent(car.slu
       */}
       <div class="detail">
         <div class="detail__main">
-          <div class="gallery" aria-label={d.car.galleryLabel}>
+          <div class="gallery" data-gallery aria-label={d.car.galleryLabel} tabindex="0">
             <div class="gallery__main">
               <img
                 id="gallery-main"
@@ -128,12 +130,23 @@ const reserveHref = `${path('reserve', locale)}?car=${encodeURIComponent(car.slu
                 alt={car.name}
                 fetchpriority="high"
                 decoding="sync"
+                draggable="false"
               />
+              {slides.length > 1 && (
+                <>
+                  <button type="button" class="gallery__nav gallery__nav--prev" aria-label={d.car.galleryPrev}>
+                    <Icon name="chevronLeft" size={22} />
+                  </button>
+                  <button type="button" class="gallery__nav gallery__nav--next" aria-label={d.car.galleryNext}>
+                    <Icon name="chevronRight" size={22} />
+                  </button>
+                </>
+              )}
             </div>
 
-            {thumbs.length > 1 && (
+            {slides.length > 1 && (
               <div class="gallery__thumbs" role="tablist" aria-label={d.car.galleryLabel}>
-                {thumbs.map((item, index) => (
+                {slides.map((item, index) => (
                   <button
                     type="button"
                     role="tab"
@@ -238,20 +251,54 @@ const reserveHref = `${path('reserve', locale)}?car=${encodeURIComponent(car.slu
 </Base>
 
 <script is:inline>
-  // Gallery thumbnails: swap the main image source. No library needed.
+  // Car photo carousel: arrows, thumbs, keyboard, and a short swipe.
   (() => {
+    const root = document.querySelector('[data-gallery]');
     const main = document.getElementById('gallery-main');
-    const thumbs = document.querySelectorAll('.gallery__thumbs button');
-    if (!main || thumbs.length < 2) return;
+    if (!root || !main) return;
 
-    thumbs.forEach((button) => {
-      button.addEventListener('click', () => {
-        const full = button.dataset.full;
-        if (!full) return;
-        main.src = full;
-        main.srcset = button.dataset.srcset || '';
-        thumbs.forEach((other) => other.setAttribute('aria-selected', String(other === button)));
-      });
+    const thumbs = Array.from(root.querySelectorAll('.gallery__thumbs button'));
+    if (thumbs.length < 2) return;
+
+    const prev = root.querySelector('.gallery__nav--prev');
+    const next = root.querySelector('.gallery__nav--next');
+    let index = 0;
+
+    const show = (nextIndex) => {
+      index = (nextIndex + thumbs.length) % thumbs.length;
+      const button = thumbs[index];
+      const full = button.dataset.full;
+      if (!full) return;
+      main.src = full;
+      main.srcset = button.dataset.srcset || '';
+      thumbs.forEach((other, i) => other.setAttribute('aria-selected', String(i === index)));
+      button.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+    };
+
+    thumbs.forEach((button, i) => button.addEventListener('click', () => show(i)));
+    prev?.addEventListener('click', () => show(index - 1));
+    next?.addEventListener('click', () => show(index + 1));
+
+    root.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        show(index - 1);
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        show(index + 1);
+      }
+    });
+
+    let startX = 0;
+    const stage = root.querySelector('.gallery__main');
+    stage?.addEventListener('pointerdown', (event) => {
+      startX = event.clientX;
+    });
+    stage?.addEventListener('pointerup', (event) => {
+      const delta = event.clientX - startX;
+      if (Math.abs(delta) < 40) return;
+      show(index + (delta < 0 ? 1 : -1));
     });
   })();
 </script>
