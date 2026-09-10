@@ -144,6 +144,34 @@ const { title, showNav = true } = Astro.props;
       .queue .state--bad { color: var(--danger); }
       .badge-cover { position: absolute; top: .4rem; left: .4rem; background: var(--brand); color: var(--brand-ink); font-size: .7rem; font-weight: 700; padding: .1rem .4rem; border-radius: 6px; }
       .shot { position: relative; }
+      /* --- homepage order list --- */
+      .rank { list-style: none; padding: 0; margin: 0 0 1.25rem; counter-reset: rank; }
+      .rank__row {
+        display: flex; align-items: center; gap: .85rem;
+        padding: .6rem .7rem; margin-bottom: .35rem;
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-radius: 10px; cursor: grab;
+      }
+      .rank__row.is-dragging { opacity: .4; }
+      /* Above the cut = on the homepage. The line makes the boundary literal. */
+      .rank__row.is-featured { border-color: #5c4a1c; background: #1d1a11; }
+      .rank__row.is-cut { margin-bottom: 1.1rem; position: relative; }
+      .rank__row.is-cut::after {
+        content: 'naslovna ↑ · ostalo ↓';
+        position: absolute; left: 0; right: 0; bottom: -.95rem;
+        text-align: center; font-size: .68rem; letter-spacing: .1em;
+        text-transform: uppercase; color: var(--dim);
+      }
+      .rank__grip { color: var(--dim); font-size: .95rem; letter-spacing: -2px; flex: none; }
+      .rank__n {
+        flex: none; width: 1.5rem; text-align: center;
+        font-weight: 700; font-size: .9rem; color: var(--muted);
+      }
+      .rank__row.is-featured .rank__n { color: var(--brand); }
+      .rank__name { flex: 1; min-width: 0; font-weight: 600; font-size: .96rem; }
+      .rank__moves { flex: none; display: flex; gap: .3rem; }
+      .rank__moves .btn { padding: .3rem .5rem; cursor: pointer; }
+      .tag--star { color: var(--brand); border-color: #5c4a1c; }
     </style>
   </head>
 

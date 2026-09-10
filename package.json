@@ -14,7 +14,8 @@
     "check": "astro check",
     "cf-typegen": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply auto-rentanje --local",
-    "db:migrate": "wrangler d1 migrations apply auto-rentanje --remote"
+    "db:migrate": "wrangler d1 migrations apply auto-rentanje --remote",
+    "shots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.10",
@@ -23,6 +24,8 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@types/node": "^26.4.1",
+    "playwright": "^1.63.0",
+    "pngjs": "^7.0.0",
     "sharp": "^0.35.4",
     "typescript": "^5.9.3",
     "wrangler": "^4.130.0"

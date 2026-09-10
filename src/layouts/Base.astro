@@ -108,7 +108,7 @@ const jsonLd = graph([businessSchema(locale), websiteSchema(locale), ...schema])
     <main id="main">
       <slot />
     </main>
-    <Footer locale={locale} />
+    <Footer locale={locale} routeKey={routeKey} />
     <WhatsappFab locale={locale} />
   </body>
 </html>

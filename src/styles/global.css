@@ -59,7 +59,7 @@
   --shadow-sm: 0 1px 2px rgb(20 17 15 / 0.06);
   --shadow: 0 8px 24px -10px rgb(20 17 15 / 0.18);
 
-  --container: 1180px;
+  --container: 1440px;
   --gutter: clamp(1rem, 4vw, 3.5rem);
 
   --font: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
@@ -127,11 +127,11 @@ button {
   }
 }
 
+
 /* ------------------------------------------------------------------ *
  * Type scale
  * The mockups run very tight tracking on display sizes (-.05em at 108px,
- * -.035em at 30px) and loosen it as size drops. That is what makes the
- * headline read as a block rather than a sentence.
+ * -.04em at 46px) and loosen it as size drops.
  * ------------------------------------------------------------------ */
 h1,
 h2,
@@ -145,7 +145,7 @@ h4 {
 }
 
 h2 {
-  font-size: clamp(1.75rem, 4.2vw, 2.875rem);
+  font-size: clamp(1.375rem, 4.2vw, 2.875rem);
   letter-spacing: -0.04em;
 }
 
@@ -207,6 +207,14 @@ p:last-child { margin-bottom: 0; }
 
 .skip-link:focus-visible { transform: translate(-50%, 0); }
 
+/* 2b shows the long link text, 2a the short one. */
+.only-narrow { display: none; }
+
+@media (max-width: 640px) {
+  .only-wide { display: none; }
+  .only-narrow { display: inline; }
+}
+
 /* ------------------------------------------------------------------ *
  * Layout
  * ------------------------------------------------------------------ */
@@ -217,10 +225,14 @@ p:last-child { margin-bottom: 0; }
   padding-inline: var(--gutter);
 }
 
+/* The 1f form column. */
+.container--narrow { max-width: calc(560px + 2 * var(--gutter)); }
+
 .section {
-  padding-block: clamp(2.75rem, 6vw, 4rem);
+  padding-block: clamp(1.5rem, 5vw, 4rem);
 }
 
+.section--page { padding-top: clamp(1.25rem, 3vw, 2.5rem); }
 .section--alt { background: var(--paper-2); }
 .section--tight { padding-block: clamp(2rem, 4vw, 2.75rem); }
 .section--flush { padding-top: 0; }
@@ -234,26 +246,64 @@ p:last-child { margin-bottom: 0; }
   margin-bottom: 1.75rem;
 }
 
-/* The "See all 6 cars →" link beside a section heading. */
+/* Heading left, "See all 6 cars →" right, on one baseline (2a / 2b). */
+.section-head--row {
+  flex-wrap: nowrap;
+  align-items: baseline;
+  margin-bottom: clamp(0.75rem, 2vw, 1.75rem);
+}
+
 .section-head a:not(.btn) {
   font-weight: 500;
-  font-size: 0.9375rem;
+  font-size: clamp(0.75rem, 1.5vw, 0.9375rem);
   color: var(--link);
+  white-space: nowrap;
 }
 
 .section-head a:not(.btn):hover { text-decoration: underline; }
 
+/* Page headings of 1d and 1f. */
+.page-title {
+  font-size: clamp(1.875rem, 4vw, 2.875rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.page-sub {
+  margin: 0.4rem 0 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .stack { display: grid; gap: 1rem; }
 
 .grid { display: grid; gap: 1.25rem; }
-.grid--cars { grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); }
+.grid--cars { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
 .grid--3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
 .grid--4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }
 
+@media (min-width: 960px) {
+  .grid--cars { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/*
+ * Homepage highlight row. Scoped modifier so the 4-up count cannot disturb
+ * the fleet listing or the related-cars strip, which both want 3 across.
+ *
+ * 2x2 from 640px, then 4 across once there is room for a readable card.
+ */
+@media (min-width: 640px) {
+  .grid--cars.grid--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1100px) {
+  .grid--cars.grid--compact { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
 /* ------------------------------------------------------------------ *
  * Buttons
- * Green is WhatsApp only. Ink-filled is the neutral primary that replaced
- * the old gold. Ghost is a hairline outline, as in 1d/2b.
+ * Green is WhatsApp only. Ghost is an ink outline, as in 1d / 2b.
  * ------------------------------------------------------------------ */
 .btn {
   display: inline-flex;
@@ -264,7 +314,7 @@ p:last-child { margin-bottom: 0; }
   border: 1px solid transparent;
   border-radius: var(--radius-btn);
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   line-height: 1;
   cursor: pointer;
   text-align: center;
@@ -300,6 +350,33 @@ p:last-child { margin-bottom: 0; }
   color: var(--on-ink);
 }
 
+/*
+ * The ghost button is ink-coloured, which is invisible on the ink hero and
+ * footer. Invert it on those grounds.
+ */
+.hero .btn--ghost,
+.footer .btn--ghost {
+  border-color: rgb(247 245 241 / 0.45);
+  color: var(--on-ink);
+}
+
+.hero .btn--ghost:hover,
+.footer .btn--ghost:hover {
+  background: var(--on-ink);
+  border-color: var(--on-ink);
+  color: var(--ink);
+}
+
+/* "Ask about other dates" on a rented car — grey outline. */
+.btn--muted {
+  border-color: rgb(0 0 0 / 0.22);
+  color: var(--text-body);
+  font-weight: 500;
+  background: transparent;
+}
+
+.btn--muted:hover { border-color: var(--ink); color: var(--ink); }
+
 .btn--sm {
   padding: 0.75rem 0.9rem;
   font-size: 0.8125rem;
@@ -310,26 +387,26 @@ p:last-child { margin-bottom: 0; }
   font-size: 1.0625rem;
 }
 
+/* The large hero actions of 2b: 19px 30px, 17px type, radius 10. */
+.btn--xl {
+  padding: 1.1875rem 1.875rem;
+  font-size: 1.0625rem;
+  border-radius: 10px;
+}
+
+/* Full-width form buttons of 1f. */
+.btn--form {
+  padding: 1rem;
+  font-size: 0.9375rem;
+  border-radius: 10px;
+}
+
 .btn--block { width: 100%; }
 
 .btn-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
-}
-
-/* On an ink ground the ghost outline has to invert or it disappears. */
-.hero .btn--ghost,
-.footer .btn--ghost {
-  border-color: rgb(247 245 241 / 0.4);
-  color: var(--on-ink);
-}
-
-.hero .btn--ghost:hover,
-.footer .btn--ghost:hover {
-  background: var(--on-ink);
-  color: var(--ink);
-  border-color: var(--on-ink);
 }
 
 /* ------------------------------------------------------------------ *
@@ -339,10 +416,10 @@ p:last-child { margin-bottom: 0; }
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.4rem 0.7rem;
-  border: 1px solid var(--line-strong);
+  padding: 0.5rem 0.8125rem;
+  border: 1px solid rgb(0 0 0 / 0.18);
   border-radius: var(--radius-pill);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1;
   color: var(--text);
@@ -356,33 +433,22 @@ p:last-child { margin-bottom: 0; }
   color: var(--on-ink);
 }
 
-/* "CURRENTLY RENTED" — mono, ink-filled, as in 1d and 2b. */
-.pill--out {
-  font-family: var(--mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+a.pill:not(.pill--in):hover { border-color: var(--ink); }
+
+/* "CURRENTLY RENTED" — mono, ink-filled, on the photo (2b). */
+.badge {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
   background: var(--ink);
-  border-color: var(--ink);
   color: var(--on-ink);
   border-radius: var(--radius-sm);
-  padding: 0.35rem 0.55rem;
-}
-
-/* Class badge sitting on a photo. */
-.pill--float {
-  position: absolute;
-  left: 0.7rem;
-  top: 0.7rem;
+  padding: 0.375rem 0.625rem;
   font-family: var(--mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: var(--surface);
-  border-color: transparent;
-  border-radius: var(--radius-sm);
-  padding: 0.35rem 0.55rem;
-  box-shadow: var(--shadow-sm);
+  line-height: 1.2;
 }
 
 .chips {
@@ -394,6 +460,8 @@ p:last-child { margin-bottom: 0; }
   list-style: none;
 }
 
+.chips--filter { gap: 0.375rem; margin-bottom: 1.25rem; }
+
 /* Horizontal scroll for filter chips on narrow screens, per 1d. */
 .chips--scroll {
   flex-wrap: nowrap;
@@ -404,16 +472,42 @@ p:last-child { margin-bottom: 0; }
 .chips--scroll::-webkit-scrollbar { display: none; }
 .chips--scroll > * { flex: none; }
 
+/* Feature chips of 1e: radius 16, 11.5px. */
+.chips--features { margin-top: 0.875rem; gap: 0.375rem; }
+
+.chips--features .pill {
+  border-radius: 16px;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.71875rem;
+}
+
 /* ------------------------------------------------------------------ *
- * Header — ink band, sticky
+ * Header — ink band, sticky (2a / 2b)
  * ------------------------------------------------------------------ */
+/*
+ * Default: solid ink, sticky. Always legible, on any page ground.
+ */
 .header {
   position: sticky;
   top: 0;
   z-index: 50;
   background: var(--ink);
   color: var(--on-ink);
-  border-bottom: 1px solid var(--line-ink);
+}
+
+/*
+ * Over a hero, the bar goes transparent so the blurred photo runs to the very
+ * top of the page. Scoped with :has() to a header immediately followed by a
+ * main whose first child is the hero — i.e. the homepage only.
+ *
+ * Deliberately a progressive enhancement: a browser without :has() keeps the
+ * solid bar above, which is the readable outcome. The reverse default would
+ * put pale text on paper on every inner page.
+ */
+.header:has(+ main > .hero:first-child) {
+  position: absolute;
+  inset-inline: 0;
+  background: transparent;
 }
 
 .header__inner {
@@ -421,42 +515,42 @@ p:last-child { margin-bottom: 0; }
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  min-height: var(--header-h);
+  padding-block: 1.375rem;
 }
 
 .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
   font-weight: 700;
   font-size: 1rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--on-ink);
-  flex: none;
+  white-space: nowrap;
 }
 
-.brand__mark {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm);
-  background: rgb(247 245 241 / 0.1);
-  color: var(--on-ink);
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: 1.875rem;
 }
+
+.menu > summary {
+  display: none;
+  list-style: none;
+  cursor: pointer;
+}
+
+.menu > summary::-webkit-details-marker { display: none; }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: 1.75rem;
+  gap: 1.875rem;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 .nav a {
   color: rgb(247 245 241 / 0.75);
-  padding-block: 0.35rem;
   transition: color 0.15s var(--ease);
 }
 
@@ -465,162 +559,291 @@ p:last-child { margin-bottom: 0; }
   color: var(--on-ink);
 }
 
-.nav a[aria-current='page'] { border-bottom: 1px solid var(--on-ink); }
-
-.header__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: none;
-}
-
+/* "BS / EN" — mono, the current language in full paper. */
 .lang {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.375rem;
   font-family: var(--mono);
   font-size: 0.75rem;
-  font-weight: 500;
   color: rgb(247 245 241 / 0.6);
 }
 
-.lang:hover { color: var(--on-ink); }
+.lang [aria-current] { color: var(--on-ink); }
+.lang a:hover { color: var(--on-ink); }
 
-.burger {
-  display: none;
-  background: none;
-  border: 1px solid var(--line-ink);
-  border-radius: var(--radius-sm);
-  padding: 0.4rem;
-  color: var(--on-ink);
-  cursor: pointer;
+.btn--head {
+  padding: 0.75rem 1.125rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
 }
 
-@media (max-width: 860px) {
-  .burger { display: grid; place-items: center; }
+.btn--head svg { display: none; }
 
-  .nav {
+@media (max-width: 899px) {
+  .header { border-bottom: 0; }
+  .header__inner { padding-block: 1rem; }
+  .brand { font-size: 0.8125rem; }
+  .header__right { gap: 0.75rem; }
+  /* Burger + dropdown. The nav is only hidden while the disclosure is
+     closed, so the links stay reachable on a phone. */
+  .menu { position: relative; }
+
+  .menu > summary {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgb(247 245 241 / 0.28);
+    border-radius: var(--radius-sm);
+    color: var(--on-ink);
+  }
+
+  .menu[open] > summary { background: rgb(247 245 241 / 0.12); }
+
+  .menu:not([open]) > .nav { display: none; }
+
+  .menu > .nav {
     position: absolute;
-    inset-inline: 0;
-    top: 100%;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    z-index: 60;
     flex-direction: column;
     align-items: stretch;
     gap: 0;
+    min-width: 168px;
+    padding: 0.3rem;
     background: var(--ink);
-    border-bottom: 1px solid var(--line-ink);
-    padding: 0.5rem var(--gutter) 1rem;
+    border: 1px solid rgb(247 245 241 / 0.16);
+    border-radius: var(--radius);
+    box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
   }
 
-  .nav[data-open='false'] { display: none; }
-  .nav a { padding-block: 0.8rem; border-bottom: 1px solid var(--line-ink); }
-  .nav a[aria-current='page'] { border-bottom-color: var(--on-ink); }
-  .header__actions .btn--wa span { display: none; }
+  .menu > .nav a {
+    /* Reset the desktop row's vertical padding and border, or each item ends
+       up ~90px tall in the dropdown. */
+    padding: 0.6rem 0.7rem;
+    border-bottom: 0;
+    line-height: 1.25;
+    border-radius: var(--radius-sm);
+  }
+
+  .menu > .nav a:hover { background: rgb(247 245 241 / 0.1); }
+
+  /* One "or call" is enough — the quick form below carries its own. */
+  .hero__call { display: none; }
+
+
+  /* 2a: "BS EN", the current one underlined. */
+  .lang { gap: 0.625rem; font-family: var(--font); font-size: 0.6875rem; font-weight: 600; }
+  .lang__sep { display: none; }
+  .lang [aria-current] { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* 2a: a small green square with the icon only. */
+  .btn--head {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 7px;
+  }
+
+  .btn--head span { display: none; }
+  .btn--head svg { display: block; }
 }
 
 /* ------------------------------------------------------------------ *
  * Hero — ink band, oversized type block (2a / 2b)
  * ------------------------------------------------------------------ */
 .hero {
+  position: relative;
+  /* Own stacking context so the backdrop can sit behind the content without
+     escaping to z-index -1 on the page. */
+  isolation: isolate;
+  overflow: hidden;
   background: var(--ink);
   color: var(--on-ink);
-  padding-block: clamp(2.75rem, 7vw, 4.75rem);
+  /* Extra top padding clears the transparent header overlaid on top of it. */
+  padding-block: calc(var(--header-h) + clamp(1.75rem, 5vw, 3.25rem))
+    clamp(2.75rem, 7vw, 4.75rem);
+}
+
+/* ---- Blurred hero backdrop --------------------------------------- *
+ * A defocused car photo out of R2. Gives the fold depth and colour without
+ * a large sharp image competing with the headline.
+ */
+.hero__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.hero__backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* scale() past the edges: a blur samples outside the element and would
+     otherwise fade to transparent at the borders. */
+  /* Pushed back again: at 16px blur the photo read as a badly-scaled image
+     rather than atmosphere. More blur plus lower opacity over a darker scrim
+     makes it colour and depth instead of a picture competing with the type. */
+  transform: scale(1.06);
+  filter: blur(18px) saturate(1.2);
+  opacity: 1;
+}
+
+/* Scrim: keeps text contrast well clear of AA regardless of the photo. */
+.hero__backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /*
+   * A grey veil rather than a black one: it mutes the photo without crushing
+   * it to near-black, so the image still reads as an image. Warm grey to match
+   * the ink palette, weighted darker on the left where the headline sits —
+   * text contrast is the constraint, so the gradient does that work instead
+   * of a flat higher opacity.
+   */
+  background: linear-gradient(
+    100deg,
+    rgb(28 26 24 / 0.9) 0%,
+    rgb(44 41 38 / 0.78) 30%,
+    rgb(74 70 65 / 0.5) 65%,
+    rgb(96 91 85 / 0.38) 100%
+  );
+}
+
+/*
+ * Phone: deepen the veil.
+ *
+ * The hero copy sits over the brightest part of the photo on a narrow screen
+ * and measured 3.29:1 there, under the 4.5:1 AA floor for body text. Desktop
+ * keeps the lighter, more visible treatment — this only trades image
+ * visibility for legibility where the two actually conflict.
+ *
+ * Placed AFTER the desktop rule on purpose: same specificity, so source order
+ * decides. Inside an earlier media block it silently lost and never applied.
+ */
+@media (max-width: 899px) {
+  .hero__backdrop::after {
+    background: linear-gradient(
+      170deg,
+      rgb(22 20 18 / 0.84) 0%,
+      rgb(34 31 28 / 0.78) 50%,
+      rgb(52 48 44 / 0.7) 100%
+    );
+  }
+}
+
+/* A blurred photo carries no information, so drop it when the user has asked
+   for less motion/effect or is on a slow connection surrogate. */
+@media (prefers-reduced-transparency: reduce) {
+  .hero__backdrop { display: none; }
 }
 
 .hero__grid {
   display: grid;
-  gap: clamp(2rem, 4vw, 3.5rem);
+  gap: 1.5rem;
   align-items: center;
 }
 
 @media (min-width: 900px) {
-  .hero__grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
+  .hero__grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 3.5rem;
+  }
 }
 
-/* The headline is the design. 108px at 1440 in the mockup, fluid here. */
+.hero__eyebrow {
+  margin: 0 0 1.625rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(247 245 241 / 0.5);
+}
+
+/* The headline is the design: 108px/.86 at 1440, 58px/.88 at 390. */
 .hero__title {
-  font-size: clamp(2.875rem, 8.5vw, 6.75rem);
+  font-size: clamp(3.625rem, 7.5vw, 6.75rem);
   line-height: 0.87;
   letter-spacing: -0.05em;
   margin: 0;
 }
 
-.hero__price {
-  display: inline-block;
-  margin: 1.25rem 0 0;
-  font-family: var(--mono);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--on-ink);
-  background: rgb(247 245 241 / 0.1);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.7rem;
-}
+.hero__title span { display: block; }
 
 .hero__body {
-  margin-top: 1.5rem;
-  max-width: 34ch;
+  margin: 1.75rem 0 0;
+  max-width: 520px;
   font-size: 1.1875rem;
   line-height: 1.5;
-  color: rgb(247 245 241 / 0.7);
+  /* Was 0.7. Over the lightened backdrop that measured 3.49:1 on mobile,
+     under the 4.5:1 AA floor for body text. Brightening the type fixes it
+     without darkening the veil and undoing the visible photo. */
+  color: rgb(247 245 241 / 0.94);
 }
 
 .hero__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.85rem;
-  margin-top: 2rem;
-}
-
-.hero__trust {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
-  margin: 1.75rem 0 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.875rem;
-  color: rgb(247 245 241 / 0.65);
-}
-
-.hero__trust li {
-  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 1.125rem;
+  margin-top: 2.125rem;
 }
 
-.hero__tick { color: var(--wa); font-weight: 700; }
-
-.hero__photo {
+.hero__call {
   margin: 0;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  background: var(--hatch-ink);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: rgb(247 245 241 / 0.6);
 }
 
-.hero__photo img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
+.hero__call a:hover { color: var(--on-ink); }
+
+/* Four photo tiles under the hero (2b); three small ones in 2a. */
+
+@media (max-width: 899px) {
+  .hero__eyebrow,
+  /* The quick form below carries its own WhatsApp submit, so the duplicate
+     CTA goes — but the row itself stays, or "Browse cars" would be
+     unreachable on a phone. */
+  .hero__actions { flex-direction: column; align-items: stretch; }
+  .hero__actions .btn--wa { display: none; }
+
+  .hero__title {
+    margin-top: 2.5rem;
+    font-size: clamp(3.625rem, 15vw, 5.5rem);
+    line-height: 0.88;
+    letter-spacing: -0.045em;
+  }
+
+  .hero__body {
+    margin-top: 1.125rem;
+    max-width: 290px;
+    font-size: 0.9375rem;
+  }
+
+
 }
 
 /* ---- Quick enquiry card in the hero (2a / 2b) --------------------- *
  * A paper card on the ink hero. Posts to the reservation route, which
- * answers with a 303 to wa.me — so it works with JS disabled, like every
- * other conversion path on the site. */
+ * answers with a 303 to wa.me — so it works with JS disabled. */
 .quick {
   background: var(--paper);
   color: var(--text);
   border-radius: var(--radius-xl);
-  padding: clamp(1.25rem, 2.5vw, 1.625rem);
+  padding: 1.625rem;
+  display: grid;
+  gap: 0.875rem;
 }
 
 .quick__title {
   font-size: 1.5rem;
-  font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.1;
-  margin: 0 0 1.25rem;
+  margin: 0 0 0.25rem;
 }
 
 .quick__row {
@@ -629,13 +852,46 @@ p:last-child { margin-bottom: 0; }
   gap: 0.875rem;
 }
 
+.quick .field input,
+.quick .field select {
+  padding: 0.9375rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.quick .field select { border-color: var(--line-strong); }
+
+.quick__submit {
+  padding: 1.125rem;
+  margin-top: 0.25rem;
+}
+
 .quick__note {
-  margin-top: 0.875rem;
+  margin: 0.25rem 0 0;
   padding-top: 0.875rem;
   border-top: 1px solid var(--line);
   font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--text-muted);
+}
+
+.quick__call {
+  display: none;
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 899px) {
+  .quick { border-radius: var(--radius); padding: 0.875rem; gap: 0.625rem; }
+  .quick__title { font-size: 1rem; margin: 0; }
+  .quick__row { gap: 0.5rem; }
+  .quick .field input { padding: 0.625rem; font-size: 0.8125rem; }
+  .quick .quick__car,
+  .quick__note { display: none; }
+  .quick__submit { padding: 0.875rem; font-size: 0.875rem; margin: 0; }
+  .quick__call { display: block; }
 }
 
 /* ------------------------------------------------------------------ *
@@ -663,16 +919,26 @@ p:last-child { margin-bottom: 0; }
 
 .card__media img {
   width: 100%;
-  aspect-ratio: 3 / 2;
+  /* Was a fixed 170px, which squashed the 4:3 source photos into a letterbox.
+     An aspect ratio grows with the column, so cars get real height. */
+  aspect-ratio: 4 / 3;
+  height: auto;
   object-fit: cover;
 }
 
 .card__body {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.375rem;
   padding: 1.125rem;
   flex: 1;
+}
+
+.card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .card__title {
@@ -682,58 +948,114 @@ p:last-child { margin-bottom: 0; }
   margin: 0;
 }
 
+.card__title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.card__price {
+  margin: 0;
+  flex: none;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--link);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.card__price small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
+
 .card__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
   margin: 0;
   font-family: var(--mono);
   font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
   color: var(--text-muted);
-}
-
-.card__price {
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.card__price b {
-  font-size: 1.3125rem;
-  font-weight: 700;
-  color: var(--link);
-  letter-spacing: -0.02em;
 }
 
 .card__actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.625rem;
   margin-top: auto;
-  padding-top: 0.35rem;
+  padding-top: 0.625rem;
 }
 
-/* Details is the wide one; the WhatsApp icon button sits beside it. */
-.card__actions .btn--ghost { flex: 1; }
+.card__actions .btn { padding: 0.875rem; }
+.card__actions .btn--wa,
+.card__actions .btn--muted { flex: 1; }
+.card__actions .btn--ghost { padding: 0.8125rem 1rem; }
 
-/* A rented car is dimmed but still indexed and still clickable. */
-.card:has(.pill--out) { opacity: 0.72; }
+/* A rented car is dimmed but still indexed and still clickable (1d). */
+.card--out { opacity: 0.72; }
+
+/*
+ * Home fleet on a phone (2a): two compact columns, a short photo, only the
+ * WhatsApp button.
+ */
+@media (max-width: 640px) {
+  .grid--compact {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .grid--compact .card { border-radius: 10px; }
+  .grid--compact .card__media img { aspect-ratio: 3 / 2; }
+  .grid--compact .badge { left: 0.375rem; top: 0.375rem; font-size: 0.5rem; padding: 0.25rem 0.375rem; }
+  .grid--compact .card__body { padding: 0.5625rem; gap: 0.25rem; }
+  .grid--compact .card__head { flex-direction: column; gap: 0.125rem; }
+  .grid--compact .card__title { font-size: 0.8125rem; }
+  .grid--compact .card__price { font-size: 0.75rem; }
+  .grid--compact .card__meta { font-size: 0.625rem; }
+  /* "COMPACT · MANUAL": the first two items, without the separator after them. */
+  .grid--compact .card__meta span:nth-of-type(n + 4) { display: none; }
+  /* 2a shows one row of two cards. */
+  .grid--compact .card:nth-child(n + 3) { display: none; }
+  .grid--compact .card__actions { padding-top: 0.25rem; }
+  .grid--compact .card__actions .btn { padding: 0.5rem; font-size: 0.6875rem; border-radius: 7px; }
+  .grid--compact .card__actions .btn svg,
+  .grid--compact .card__actions .btn--ghost { display: none; }
+}
 
 /* ------------------------------------------------------------------ *
- * Car detail
+ * Car detail (1e)
  * ------------------------------------------------------------------ */
 .detail {
   display: grid;
-  gap: clamp(1.75rem, 4vw, 3rem);
+  gap: 1.125rem;
   align-items: start;
 }
 
+.detail__main,
+.detail__aside {
+  display: grid;
+  gap: 1.125rem;
+  align-content: start;
+}
+
 @media (min-width: 960px) {
-  .detail { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); }
-  .detail__aside { position: sticky; top: calc(var(--header-h) + 1.5rem); }
+  .detail {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    gap: 3rem;
+  }
+
+  .detail__aside { position: sticky; top: 6rem; }
+}
+
+/*
+ * On a phone the two columns dissolve and the blocks run in the 1e order:
+ * gallery, name, prices, specs, then the sticky CTA bar.
+ */
+@media (max-width: 959px) {
+  .detail__main,
+  .detail__aside { display: contents; }
+
+  .gallery { order: 1; }
+  .detail__head { order: 2; }
+  .rates { order: 3; }
+  .detail__specs { order: 4; }
+  .detail__cta { order: 5; }
 }
 
 .gallery { display: grid; gap: 0.6rem; }
@@ -752,11 +1074,16 @@ p:last-child { margin-bottom: 0; }
 
 .gallery__thumbs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
   gap: 0.5rem;
+}
+
+.gallery__thumbs button {
   padding: 0;
-  margin: 0;
-  list-style: none;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
 }
 
 .gallery__thumbs img {
@@ -768,61 +1095,72 @@ p:last-child { margin-bottom: 0; }
   border: 1px solid var(--line);
 }
 
-/* ---- Tiered pricing (1e) ----------------------------------------- *
- * Rows in a bordered box, the best rate highlighted in blue. */
-.price-box {
-  border: 1px solid var(--line);
+.gallery__thumbs [aria-selected='true'] img { border-color: var(--ink); }
+
+.detail__head .eyebrow { margin-bottom: 0.375rem; }
+
+.detail__title {
+  font-size: clamp(2.125rem, 4vw, 3rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.detail__title span { display: block; }
+
+.detail__desc {
+  margin: 0.625rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-body);
+}
+
+/* ---- Tiered pricing (1e) ----------------------------------------- */
+.rates {
+  border: 1px solid rgb(0 0 0 / 0.14);
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--surface);
 }
 
-.price-box__main {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  padding: 1rem 1.125rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.price-box__main b {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  color: var(--text);
-}
-
-.price-box__tiers > div {
+.rates > div {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.8rem 1.125rem;
+  padding: 0.75rem 0.875rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border-bottom: 1px solid var(--line);
 }
 
-.price-box__tiers > div:nth-child(odd) { background: var(--paper-2); }
-.price-box__tiers > div b { font-size: 0.9375rem; font-weight: 700; }
+.rates > div + div { border-top: 1px solid var(--line); }
+.rates b { font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.02em; }
+.rates .is-alt { background: var(--paper-2); }
 
-/* The cheapest tier is the one worth reading — invert it. */
-.price-box__tiers > div:last-child {
+/* The cheapest tier is the one worth reading — blue, as in 1e. */
+.rates .is-best {
   background: var(--link);
   color: #fff;
-  border-bottom: none;
 }
+
+.rates__deposit {
+  font-size: 0.75rem !important;
+  color: var(--text-muted);
+}
+
+.rates__deposit b { font-size: 0.8125rem; color: var(--text); }
 
 /* ---- Spec grid (1e) ---------------------------------------------- *
  * Hairline gaps rather than borders: one background showing through a
  * 1px grid gap, so there are no doubled edges. */
+.detail__specs .eyebrow { margin-bottom: 0.5rem; }
+
 .specs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 1px;
   background: var(--line);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   overflow: hidden;
   padding: 0;
   margin: 0;
@@ -830,48 +1168,56 @@ p:last-child { margin-bottom: 0; }
 }
 
 .specs > * {
-  background: var(--paper);
-  padding: 0.7rem 0.75rem;
+  background: var(--surface);
+  padding: 0.625rem 0.75rem;
 }
+
+.specs > :last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 .specs .k {
   display: block;
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
 }
 
 .specs .v {
   display: block;
-  margin-top: 0.3rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text);
 }
 
-.included {
-  padding: 0;
-  margin: 0;
-  list-style: none;
+.detail__cta {
   display: grid;
-  gap: 0.45rem;
-  font-size: 0.9375rem;
-  color: var(--text-body);
+  gap: 0.625rem;
+  justify-items: center;
 }
 
-.included li {
-  display: flex;
-  gap: 0.5rem;
-  align-items: baseline;
+.detail__cta .btn { padding: 1rem; font-size: 0.9375rem; border-radius: 10px; }
+
+.detail__link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--link);
 }
 
-.included li::before {
-  content: '✓';
-  color: var(--wa);
-  font-weight: 700;
-  flex: none;
+.detail__link:hover { text-decoration: underline; }
+
+/* 1e: the CTA sits in a bar stuck to the bottom of a phone screen. */
+@media (max-width: 959px) {
+  .detail__cta {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    margin-inline: calc(-1 * var(--gutter));
+    padding: 0.75rem var(--gutter) calc(0.75rem + env(safe-area-inset-bottom));
+    background: var(--paper-2);
+    border-top: 1px solid var(--line);
+  }
 }
 
 .breadcrumbs {
@@ -889,12 +1235,9 @@ p:last-child { margin-bottom: 0; }
 .form { display: grid; gap: 0.875rem; }
 
 .form__row { display: grid; gap: 0.875rem; }
+.form__row--2 { grid-template-columns: 1fr 1fr; }
 
-@media (min-width: 560px) {
-  .form__row--2 { grid-template-columns: 1fr 1fr; }
-}
-
-.field { display: grid; gap: 0.45rem; }
+.field { display: grid; gap: 0.375rem; }
 
 .field > label,
 .field > .eyebrow {
@@ -911,7 +1254,8 @@ p:last-child { margin-bottom: 0; }
 .field select,
 .field textarea {
   width: 100%;
-  padding: 0.8rem 0.85rem;
+  min-width: 0;
+  padding: 0.8125rem 0.875rem;
   font: 500 0.9375rem/1.3 var(--font);
   color: var(--text);
   background: var(--surface);
@@ -921,7 +1265,7 @@ p:last-child { margin-bottom: 0; }
 }
 
 .field textarea {
-  min-height: 3.5rem;
+  min-height: 4.5rem;
   resize: vertical;
   font-weight: 400;
 }
@@ -937,38 +1281,64 @@ p:last-child { margin-bottom: 0; }
   border-color: var(--ink);
 }
 
-/* A preselected car reads as chosen — ink border, as in 1f. */
-.field select { border-color: var(--ink); }
+/* The car choice reads as chosen — ink border and weight, as in 1f. */
+.form .field select {
+  border-color: var(--ink);
+  font-weight: 600;
+}
 
 .field .req { color: var(--danger); }
 
-/* Estimate panel — ink card with the total as the loudest number (1f). */
-.form__estimate {
+/* Estimate — ink card with the total as the loudest number (1f). */
+.estimate {
   background: var(--ink);
   color: var(--on-ink);
   border-radius: var(--radius);
-  padding: 1rem 1.125rem;
+  padding: 0.875rem 1rem;
 }
 
-.form__estimate .eyebrow {
-  color: rgb(247 245 241 / 0.55);
-  margin-bottom: 0.5rem;
+.estimate__top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.form__estimate b {
+.estimate__k {
   display: block;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(247 245 241 / 0.55);
+}
+
+.estimate__total {
+  display: block;
+  margin-top: 0.25rem;
   font-size: 1.875rem;
   font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1;
 }
 
-.form__note {
+.estimate__rate {
+  text-align: right;
   font-size: 0.75rem;
-  line-height: 1.45;
-  color: var(--text-dim);
-  font-family: var(--mono);
+  line-height: 1.4;
+  color: rgb(247 245 241 / 0.7);
 }
+
+.estimate__note {
+  margin: 0.625rem 0 0;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--line-ink);
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: rgb(247 245 241 / 0.55);
+}
+
+.form__actions { display: grid; gap: 0.5rem; margin-top: 0.25rem; }
 
 .alert {
   border: 1px solid var(--line-strong);
@@ -983,7 +1353,7 @@ p:last-child { margin-bottom: 0; }
 .alert--err { border-left-color: var(--danger); }
 
 /* ------------------------------------------------------------------ *
- * Tiles, steps, stats — supporting content blocks
+ * Tiles — supporting content blocks (FAQ page, 404)
  * ------------------------------------------------------------------ */
 .tile {
   background: var(--surface);
@@ -1001,35 +1371,6 @@ p:last-child { margin-bottom: 0; }
   background: var(--paper-2);
   color: var(--ink);
   margin-bottom: 0.75rem;
-}
-
-.step {
-  display: flex;
-  gap: 0.85rem;
-  align-items: flex-start;
-}
-
-.step__n {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--on-ink);
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem 2.5rem;
-  padding: 0;
-  margin: 0;
-  list-style: none;
 }
 
 /* ------------------------------------------------------------------ *
@@ -1074,163 +1415,109 @@ p:last-child { margin-bottom: 0; }
 }
 
 /* ------------------------------------------------------------------ *
- * Green CTA band (2b)
+ * Green band (2b) — full bleed, copy left, the number right
  * ------------------------------------------------------------------ */
-/*
- * A rounded green card, not a full-bleed band: the markup nests .cta inside
- * .container, so it needs its own horizontal padding — without it the copy
- * sits hard against the green edge.
- *
- * Wide enough, it splits like 2b: copy left, actions right.
- */
-.cta {
+.band {
   background: var(--wa);
   color: #fff;
-  border-radius: var(--radius-xl);
-  padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.5rem, 3.5vw, 2.75rem);
-  margin-block: clamp(1rem, 2.5vw, 1.75rem);
-  display: grid;
-  gap: clamp(1.5rem, 3vw, 2.5rem);
+  padding-block: clamp(2rem, 4vw, 3.25rem);
+}
+
+.band__inner {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem 3rem;
 }
 
-@media (min-width: 800px) {
-  .cta {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  /* The button row is the second column; the heading and copy share the first. */
-  .cta h2 { grid-column: 1; }
-  .cta p { grid-column: 1; grid-row: 2; }
-  .cta .btn-row { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; }
-}
-
-.cta h2 {
+.band h2 {
+  font-size: clamp(1.625rem, 3.2vw, 2.5rem);
+  line-height: 1.05;
   letter-spacing: -0.04em;
-  margin: 0;
-  max-width: 24ch;
 }
 
-.cta p {
-  margin: 0;
-  max-width: 52ch;
-  font-size: 1.0625rem;
+.band p {
+  margin: 0.625rem 0 0;
+  max-width: 620px;
+  font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
   line-height: 1.5;
   color: rgb(255 255 255 / 0.85);
 }
 
-.cta .btn-row { gap: 0.6rem; }
-
-/* Inside the green band the button has to be paper, not green-on-green. */
-.cta .btn--wa,
-.cta .btn--brand {
+.band__btn {
+  flex: none;
   background: #fff;
   color: var(--wa-strong);
+  border-radius: 10px;
+  padding: 1.1875rem 1.875rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s var(--ease);
 }
 
-.cta .btn--wa:hover,
-.cta .btn--brand:hover { background: var(--paper); }
-
-.cta .btn--ghost {
-  border-color: rgb(255 255 255 / 0.5);
-  color: #fff;
-}
-
-.cta .btn--ghost:hover {
-  background: #fff;
-  color: var(--wa-strong);
-  border-color: #fff;
-}
+.band__btn:hover { background: var(--paper); }
 
 /* ------------------------------------------------------------------ *
- * Footer — ink band
+ * Footer — one ink row (2b)
  * ------------------------------------------------------------------ */
 .footer {
   background: var(--ink);
   color: rgb(247 245 241 / 0.6);
-  padding-block: 2.25rem;
+  padding-block: 2rem;
   font-size: 0.8125rem;
   line-height: 1.6;
 }
 
-.footer__grid {
-  display: grid;
-  gap: 1.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-}
-
-.footer h2,
-.footer h3 {
-  font-size: 0.6875rem;
-  font-family: var(--mono);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgb(247 245 241 / 0.45);
-  margin-bottom: 0.75rem;
-  letter-spacing: 0.14em;
-}
-
-.footer a:hover { color: var(--on-ink); text-decoration: underline; }
-
-.contact-list {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  display: grid;
-  gap: 0.55rem;
-}
-
-.contact-list li {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-start;
-}
-
-.contact-list svg { flex: none; margin-top: 0.15rem; opacity: 0.7; }
-
-.footer__meta {
-  margin-top: 1.75rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--line-ink);
+.footer__inner {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
+  align-items: center;
   justify-content: space-between;
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  color: rgb(247 245 241 / 0.45);
+  gap: 0.75rem 2rem;
 }
 
+.footer p { margin: 0; }
+
+.footer__links {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.footer__links [aria-current] { color: var(--on-ink); }
+.footer a:hover { color: var(--on-ink); text-decoration: underline; }
+
 /* ------------------------------------------------------------------ *
- * Floating WhatsApp button
+ * Floating WhatsApp button — phones only (2a)
  * ------------------------------------------------------------------ */
 .fab {
   position: fixed;
   right: 1rem;
   bottom: 1rem;
   z-index: 60;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.9rem 1.1rem;
-  border-radius: 999px;
+  display: none;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
   background: var(--wa);
   color: #fff;
-  font-weight: 600;
-  font-size: 0.9375rem;
   box-shadow: 0 6px 18px rgb(20 17 15 / 0.28);
 }
 
 .fab:hover { background: var(--wa-strong); }
 
-@media (max-width: 560px) {
-  .fab { padding: 0.9rem; }
-  .fab span { display: none; }
+@media (max-width: 899px) {
+  .fab { display: grid; }
+  /* The detail page has its own sticky WhatsApp bar. */
+  body:has(.detail__cta) .fab { display: none; }
 }
 
 @media print {
   .fab,
   .header,
-  .cta { display: none; }
+  .band { display: none; }
   body { background: #fff; color: #000; }
 }

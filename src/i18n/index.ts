@@ -5,8 +5,14 @@ import { en } from './en';
 export const LOCALES = ['bs', 'en'] as const;
 export type Locale = (typeof LOCALES)[number];
 
-/** The default locale is served from the root, without a URL prefix. */
-export const DEFAULT_LOCALE: Locale = 'bs';
+/**
+ * The default locale is served from the root, without a URL prefix.
+ *
+ * English leads: the higher-value renters are visitors flying into Sarajevo,
+ * who search in English. Bosnian moved to /bs rather than staying at the root
+ * — safe to do because nothing had been deployed or indexed yet.
+ */
+export const DEFAULT_LOCALE: Locale = 'en';
 
 const DICTS: Record<Locale, Dict> = { bs, en };
 
@@ -20,11 +26,11 @@ export type RouteKey = 'home' | 'cars' | 'car' | 'reserve' | 'faq';
  * two language versions rank independently in each market.
  */
 const ROUTES: Record<RouteKey, Record<Locale, string>> = {
-  home: { bs: '/', en: '/en' },
-  cars: { bs: '/vozila', en: '/en/cars' },
-  car: { bs: '/vozila/:slug', en: '/en/cars/:slug' },
-  reserve: { bs: '/rezervacija', en: '/en/reservation' },
-  faq: { bs: '/faq', en: '/en/faq' },
+  home: { en: '/', bs: '/bs' },
+  cars: { en: '/cars', bs: '/bs/vozila' },
+  car: { en: '/cars/:slug', bs: '/bs/vozila/:slug' },
+  reserve: { en: '/reservation', bs: '/bs/rezervacija' },
+  faq: { en: '/faq', bs: '/bs/faq' },
 };
 
 /** Builds a root-relative path for a route in a given locale. */

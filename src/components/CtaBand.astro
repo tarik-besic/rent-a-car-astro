@@ -1,0 +1,32 @@
+---
+import { site } from '~/config/site';
+import { t, type Locale } from '~/i18n';
+import { genericWhatsappLink } from '~/lib/whatsapp';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const d = t(locale);
+---
+
+{/* Full-bleed green band from mockup 2b. The number opens the chat. */}
+<section class="band">
+  <div class="container band__inner">
+    <div>
+      <h2>{d.home.ctaHeading}</h2>
+      <p>{d.home.ctaText}</p>
+    </div>
+    <a
+      class="band__btn"
+      href={genericWhatsappLink(locale)}
+      target="_blank"
+      rel="noopener"
+      aria-label={`${d.common.whatsappCta}: ${site.phoneDisplay}`}
+      data-wa="band"
+    >
+      {site.phoneDisplay}
+    </a>
+  </div>
+</section>

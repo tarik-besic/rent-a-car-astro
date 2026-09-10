@@ -9,9 +9,15 @@ import { VARIANTS } from '~/lib/photos';
  * Worker is only hit on a cache miss.
  */
 
-/** Only ever serve keys we generate. Blocks traversal and bucket probing. */
+/**
+ * Only ever serve keys we generate. Blocks traversal and bucket probing.
+ *
+ * Two namespaces:
+ *   cars/<carId>/<photoId>-<w>.webp   photos owned by a car, deleted with it
+ *   site/hero/<id>-<w>.webp           site assets, never touched by car deletion
+ */
 const KEY_PATTERN = new RegExp(
-  `^cars/[a-z0-9-]+/[a-f0-9-]{36}-(?:${VARIANTS.join('|')})\\.webp$`,
+  `^(?:cars/[a-z0-9-]+|site/hero)/[a-f0-9-]{36}-(?:${VARIANTS.join('|')})\\.webp$`,
 );
 
 export const GET: APIRoute = async ({ params, locals, request }) => {

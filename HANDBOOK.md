@@ -74,13 +74,13 @@ database instead.
 Ten pages: five in Bosnian, five in English, on translated URLs so the two
 language versions rank independently.
 
-| Page | Bosnian | English | What it does |
+| Page | English | Bosnian | What it does |
 | --- | --- | --- | --- |
-| **Landing** | `/` | `/en` | Hero, featured cars, trust signals, FAQ extract. Title carries the cheapest daily rate, pulled live from D1. |
-| **Fleet** | `/vozila` | `/en/cars` | Every visible car, filterable by class. Filter chips generated from the classes actually in use. |
-| **Car detail** | `/vozila/[slug]` | `/en/cars/[slug]` | Gallery, spec table, tiered pricing, equipment, related cars, car-specific WhatsApp link. |
-| **Reservation** | `/rezervacija` | `/en/reservation` | Enquiry form with live price estimate. Two submit paths: WhatsApp or email. |
-| **FAQ** | `/faq` | `/en/faq` | 12 questions with `FAQPage` structured data. |
+| **Landing** | `/` | `/bs` | Hero, featured cars, trust signals, FAQ extract. Title carries the cheapest daily rate, pulled live from D1. |
+| **Fleet** | `/cars` | `/bs/vozila` | Every visible car, filterable by class. Filter chips generated from the classes actually in use. |
+| **Car detail** | `/cars/[slug]` | `/bs/vozila/[slug]` | Gallery, spec table, tiered pricing, equipment, related cars, car-specific WhatsApp link. |
+| **Reservation** | `/reservation` | `/bs/rezervacija` | Enquiry form with live price estimate. Two submit paths: WhatsApp or email. |
+| **FAQ** | `/faq` | `/bs/faq` | 12 questions with `FAQPage` structured data. |
 | **Not found** | 404 | 404 | Real 404 for removed cars, so Google drops the URL rather than keeping a soft-404. |
 
 ### Machine endpoints
@@ -135,7 +135,7 @@ right action.
 
 ### Search visibility
 
-- Translated URLs per locale with a full `hreflang` cluster including `x-default`.
+- Translated URLs per locale (English at the root, Bosnian under /bs) with a full `hreflang` cluster including `x-default`.
 - Structured data: `AutoRental` + `LocalBusiness`, `Product` + `Car` with
   per-day `Offer`, `ItemList`, `BreadcrumbList`, `FAQPage`, `WebSite`.
 - Canonical URLs, per-page meta descriptions, OpenGraph and Twitter cards.

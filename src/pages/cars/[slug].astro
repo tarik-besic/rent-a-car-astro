@@ -5,6 +5,7 @@ import { getCar } from '~/lib/cars';
 
 const car = await getCar(Astro.locals.runtime.env.DB, Astro.params.slug ?? '');
 
+// A removed car must return a real 404 so Google drops the URL from the index.
 if (!car) Astro.response.status = 404;
 ---
 

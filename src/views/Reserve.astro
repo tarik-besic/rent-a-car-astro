@@ -7,7 +7,6 @@ import { abs, path, t, type Locale } from '~/i18n';
 import { getPublishedCars } from '~/lib/cars';
 import { formatPrice } from '~/lib/format';
 import { breadcrumbSchema } from '~/lib/schema';
-import { genericWhatsappLink } from '~/lib/whatsapp';
 import type { ReservationState } from '~/lib/reservation';
 
 interface Props {
@@ -27,11 +26,18 @@ const values = state.values;
  * never re-fetches anything.
  */
 const clientConfig = {
+  // Every rate the estimate can pick from, keyed by the <option> value.
   prices: Object.fromEntries(
-    cars.filter((car) => car.pricePerDay !== null).map((car) => [car.name, car.pricePerDay]),
+    cars
+      .filter((car) => car.pricePerDay !== null)
+      .map((car) => [car.name, { day: car.pricePerDay, d3: car.price3Day, d7: car.price7Day, deposit: car.deposit }]),
   ),
   currency: site.currency.symbol,
+  perDay: d.common.perDay,
   estimateLabel: d.reserve.estimateLabel,
+  rates: d.reserve.rates,
+  estimateNote: d.reserve.estimateNote,
+  depositNote: d.reserve.depositNote,
   dayWords: [d.reserve.days(1), d.reserve.days(2)],
   dateLocale: locale === 'bs' ? 'bs-BA' : 'en-GB',
   mail: {
@@ -57,50 +63,24 @@ const schema = [
   description={d.reserve.description}
   schema={schema}
 >
-  <section class="section">
-    <div class="container" style="max-width:900px">
+  <section class="section section--page">
+    <div class="container container--narrow">
       <Breadcrumbs
         items={[{ name: d.nav.home, href: path('home', locale) }, { name: d.nav.reserve }]}
       />
 
-      <div class="section-head">
-        <h1>{d.reserve.h1}</h1>
-        <p>{d.reserve.intro}</p>
-      </div>
-
-      {/* The WhatsApp shortcut sits above the form: most visitors never scroll past it. */}
-      <div class="cta" style="text-align:left;margin-bottom:2rem">
-        <h2 style="font-size:1.35rem">{d.reserve.whatsappBoxHeading}</h2>
-        <p style="margin-inline:0">{d.reserve.whatsappBoxText}</p>
-        <div class="btn-row" style="justify-content:flex-start;margin-top:1.25rem">
-          <a
-            class="btn btn--wa btn--lg"
-            href={genericWhatsappLink(locale)}
-            target="_blank"
-            rel="noopener"
-            data-wa="reserve-top"
-          >
-            <Icon name="whatsapp" size={22} />
-            {site.phoneDisplay}
-          </a>
-          <a class="btn btn--ghost" href={`tel:${site.phone}`}>
-            <Icon name="phone" size={18} />
-            {d.common.callCta}
-          </a>
-        </div>
-      </div>
+      <h1 class="page-title">{d.reserve.h1}</h1>
+      <p class="page-sub">{d.reserve.intro}</p>
 
       <form class="form" method="POST" id="reservation-form">
-        <h2 style="font-size:1.2rem;margin:0">{d.reserve.formHeading}</h2>
-
         <div class="field">
           <label for="car">{d.reserve.labels.car}</label>
           <select id="car" name="car">
             <option value="">{d.reserve.labels.carAny}</option>
             {cars.map((car) => (
               <option value={car.name} selected={values.car === car.name}>
-                {car.name}
-                {car.pricePerDay !== null && ` — ${formatPrice(car.pricePerDay, locale)}/${d.common.perDay}`}
+                {car.year ? `${car.name} ${car.year}` : car.name}
+                {car.pricePerDay !== null && ` — ${formatPrice(car.pricePerDay, locale)}`}
               </option>
             ))}
           </select>
@@ -108,7 +88,7 @@ const schema = [
 
         <div class="form__row form__row--2">
           <div class="field">
-            <label for="pickupDate">{d.reserve.labels.pickupDate} <span class="req">*</span></label>
+            <label for="pickupDate">{d.reserve.labels.pickupDate}</label>
             <input type="date" id="pickupDate" name="pickupDate" value={values.pickupDate} required />
           </div>
           <div class="field">
@@ -118,34 +98,29 @@ const schema = [
         </div>
 
         <div class="field">
-          <label for="pickupPlace">{d.reserve.labels.pickupPlace}</label>
+          <label for="name">{d.reserve.labels.name}</label>
           <input
             type="text"
-            id="pickupPlace"
-            name="pickupPlace"
-            list="places"
-            value={values.pickupPlace}
-            autocomplete="off"
+            id="name"
+            name="name"
+            value={values.name}
+            placeholder={d.reserve.labels.namePlaceholder}
+            autocomplete="name"
+            required
           />
-          <datalist id="places">
-            {site.serviceAreas.map((area) => <option value={area} />)}
-          </datalist>
-        </div>
-
-        <div class="form__row form__row--2">
-          <div class="field">
-            <label for="name">{d.reserve.labels.name} <span class="req">*</span></label>
-            <input type="text" id="name" name="name" value={values.name} autocomplete="name" required />
-          </div>
-          <div class="field">
-            <label for="phone">{d.reserve.labels.phone} <span class="req">*</span></label>
-            <input type="tel" id="phone" name="phone" value={values.phone} autocomplete="tel" required />
-          </div>
         </div>
 
         <div class="field">
-          <label for="email">{d.reserve.labels.email}</label>
-          <input type="email" id="email" name="email" value={values.email} autocomplete="email" />
+          <label for="phone">{d.reserve.labels.phone}</label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            value={values.phone}
+            placeholder={d.reserve.labels.phonePlaceholder}
+            autocomplete="tel"
+            required
+          />
         </div>
 
         <div class="field">
@@ -153,32 +128,35 @@ const schema = [
           <textarea id="note" name="note" placeholder={d.reserve.labels.notePlaceholder}>{values.note}</textarea>
         </div>
 
-        <p class="form__estimate" id="estimate" hidden>
-          <span id="estimate-days"></span>
-          <b id="estimate-total"></b>
-        </p>
+        {/* Ink estimate card from 1f — filled in by the script below. */}
+        <div class="estimate" id="estimate" hidden>
+          <div class="estimate__top">
+            <div>
+              <span class="estimate__k" id="estimate-days"></span>
+              <b class="estimate__total" id="estimate-total"></b>
+            </div>
+            <span class="estimate__rate" id="estimate-rate"></span>
+          </div>
+          <p class="estimate__note" id="estimate-note"></p>
+        </div>
 
-        <div class="btn-row">
-          <button class="btn btn--wa btn--lg" type="submit" name="via" value="whatsapp" data-wa="reserve-form">
-            <Icon name="whatsapp" size={21} />
+        <div class="form__actions">
+          <button class="btn btn--wa btn--block btn--form" type="submit" name="via" value="whatsapp" data-wa="reserve-form">
+            <Icon name="whatsapp" size={19} />
             {d.reserve.submitWhatsapp}
           </button>
 
           {/*
             A plain mailto: anchor, not a submit button — clicking it always
             hands off to the visitor's own mail app with the message already
-            written. Nothing is sent from the server, so there is no transport
-            to configure and no delivery to fail. The href starts out filled
-            with whatever the page was loaded with and the script below keeps
-            it in sync as the form is typed into.
+            written. Nothing is sent from the server. The href starts out
+            filled with whatever the page was loaded with and the script below
+            keeps it in sync as the form is typed into.
           */}
-          <a class="btn btn--ghost btn--lg" id="mailto-link" href={state.mailto}>
-            <Icon name="mail" size={19} />
+          <a class="btn btn--ghost btn--block btn--form" id="mailto-link" href={state.mailto}>
             {d.reserve.submitEmail}
           </a>
         </div>
-
-        <p class="form__note">{d.reserve.emailFallbackNote}</p>
       </form>
     </div>
   </section>
@@ -207,21 +185,22 @@ const schema = [
     const car = field('car');
     const pickup = field('pickupDate');
     const ret = field('returnDate');
-    const place = field('pickupPlace');
     const name = field('name');
     const phone = field('phone');
-    const email = field('email');
     const note = field('note');
 
     const box = document.getElementById('estimate');
     const daysEl = document.getElementById('estimate-days');
     const totalEl = document.getElementById('estimate-total');
+    const rateEl = document.getElementById('estimate-rate');
+    const noteEl = document.getElementById('estimate-note');
 
     const today = new Date().toISOString().slice(0, 10);
     pickup.min = today;
     ret.min = today;
 
     const parseDay = (value) => Date.parse(value + 'T00:00:00Z');
+    const money = (value) => value + ' ' + cfg.currency;
 
     // Matches the server's formatting so both channels read identically.
     const formatDate = (value) => {
@@ -245,16 +224,21 @@ const schema = [
       add(L.car, car.value);
       add(L.pickup, formatDate(pickup.value));
       add(L.ret, formatDate(ret.value));
-      add(L.place, place.value);
       add(L.name, name.value);
       add(L.phone, phone.value);
-      add(L.email, email.value);
       add(L.note, note.value.slice(0, 500));
       return lines.join('\n');
     };
 
     const plural = (n) =>
       n === 1 ? cfg.dayWords[0] : cfg.dayWords[1].replace(/^\d+/, String(n));
+
+    // The longest tier the rental qualifies for, falling back to the day rate.
+    const pickRate = (price, days) => {
+      if (days >= 7 && price.d7) return { value: price.d7, label: cfg.rates.d7 };
+      if (days >= 3 && price.d3) return { value: price.d3, label: cfg.rates.d3 };
+      return { value: price.day, label: cfg.rates.day };
+    };
 
     const update = () => {
       if (pickup.value) ret.min = pickup.value;
@@ -271,15 +255,21 @@ const schema = [
 
       const start = parseDay(pickup.value);
       const end = parseDay(ret.value);
-      if (!pickup.value || !ret.value || Number.isNaN(start) || Number.isNaN(end) || end < start) {
+      const price = cfg.prices[car.value];
+      if (!price || !pickup.value || !ret.value || Number.isNaN(start) || Number.isNaN(end) || end < start) {
         box.hidden = true;
         return;
       }
 
       const days = Math.max(1, Math.round((end - start) / 86400000));
-      const price = cfg.prices[car.value];
-      daysEl.textContent = plural(days);
-      totalEl.textContent = price ? cfg.estimateLabel + ': ~' + days * price + ' ' + cfg.currency : '';
+      const rate = pickRate(price, days);
+      daysEl.textContent = cfg.estimateLabel + ' · ' + plural(days);
+      totalEl.textContent = money(days * rate.value);
+      rateEl.innerHTML = '';
+      rateEl.append(money(rate.value) + '/' + cfg.perDay, document.createElement('br'), rate.label);
+      noteEl.textContent =
+        cfg.estimateNote +
+        (price.deposit ? ' ' + cfg.depositNote.replace('{price}', money(price.deposit)) : '');
       box.hidden = false;
     };
 
