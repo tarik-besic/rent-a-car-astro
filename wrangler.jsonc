@@ -47,7 +47,7 @@
   // Secrets (ADMIN_PASSWORD, ADMIN_SESSION_SECRET) are set with:
   //   npx wrangler secret put ADMIN_PASSWORD
   "vars": {
-    "PUBLIC_SITE_URL": "https://auto-rentanje.workers.dev",
+    "PUBLIC_SITE_URL": "https://auto-rentanje.auto-rentanje.workers.dev",
     "PUBLIC_BUSINESS_NAME": "Auto Rentanje",
     "PUBLIC_WHATSAPP": "38761524541",
     "PUBLIC_PHONE": "+38761524541",
