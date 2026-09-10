@@ -234,4 +234,3 @@ wrangler.jsonc        bindings, vars, observability
 | WhatsApp link opens an empty chat | `PUBLIC_WHATSAPP` contains a `+`, spaces, or a leading `00`. Digits only. |
 | Wrangler refuses to run | Node 20. This project needs Node 22+. |
 
-`UPUTSTVO.md` is a short guide in Bosnian for whoever maintains the car list.
