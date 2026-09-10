@@ -1,0 +1,152 @@
+---
+import Base from '~/layouts/Base.astro';
+import CarCard from '~/components/CarCard.astro';
+import Icon from '~/components/Icon.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { site } from '~/config/site';
+import { abs, path, t, type Locale } from '~/i18n';
+import { getCategories, getPublishedCars } from '~/lib/cars';
+import { breadcrumbSchema } from '~/lib/schema';
+import { formatPrice, priceValue } from '~/lib/format';
+import { genericWhatsappLink } from '~/lib/whatsapp';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const d = t(locale);
+
+const FILTER_PARAM = locale === 'bs' ? 'klasa' : 'class';
+const activeCategory = Astro.url.searchParams.get(FILTER_PARAM) ?? '';
+
+const db = Astro.locals.runtime.env.DB;
+const [allCars, categories] = await Promise.all([getPublishedCars(db), getCategories(db)]);
+
+const cars = activeCategory
+  ? allCars.filter((car) => car.category.toLowerCase() === activeCategory.toLowerCase())
+  : allCars;
+
+const listUrl = path('cars', locale);
+const filterHref = (category: string) =>
+  category ? `${listUrl}?${FILTER_PARAM}=${encodeURIComponent(category)}` : listUrl;
+
+const prices = cars.map((car) => car.pricePerDay).filter((price): price is number => price !== null);
+const lowest = prices.length ? Math.min(...prices) : null;
+
+const schema = [
+  breadcrumbSchema([
+    { name: d.nav.home, url: abs(path('home', locale)) },
+    { name: d.nav.cars, url: abs(listUrl) },
+  ]),
+  {
+    '@type': 'ItemList',
+    name: d.cars.h1,
+    numberOfItems: cars.length,
+    itemListElement: cars.map((car, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: abs(path('car', locale, car.slug)),
+      name: car.name,
+    })),
+  },
+  ...(lowest !== null
+    ? [
+        {
+          '@type': 'AggregateOffer',
+          offerCount: prices.length,
+          lowPrice: priceValue(lowest),
+          highPrice: priceValue(Math.max(...prices)),
+          priceCurrency: site.currency.code,
+        },
+      ]
+    : []),
+];
+---
+
+<Base
+  locale={locale}
+  routeKey="cars"
+  title={d.cars.title}
+  description={d.cars.description}
+  schema={schema}
+  noindex={Boolean(activeCategory)}
+>
+  <section class="section">
+    <div class="container">
+      <Breadcrumbs
+        items={[{ name: d.nav.home, href: path('home', locale) }, { name: d.nav.cars }]}
+      />
+
+      <div class="section-head">
+        <h1>{d.cars.h1}</h1>
+        <p>{d.cars.intro}</p>
+      </div>
+
+      {categories.length > 1 && (
+        <ul class="chips" style="margin-bottom:1.75rem">
+          <li>
+            <a
+              class={`pill${activeCategory ? '' : ' pill--in'}`}
+              href={filterHref('')}
+              aria-current={activeCategory ? undefined : 'true'}
+            >
+              {d.cars.filterAll}
+            </a>
+          </li>
+          {categories.map((category) => (
+            <li>
+              <a
+                class={`pill${activeCategory.toLowerCase() === category.toLowerCase() ? ' pill--in' : ''}`}
+                href={filterHref(category)}
+                rel="nofollow"
+              >
+                {category}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p class="muted" style="margin-bottom:1.25rem;font-size:.9rem">
+        {d.cars.countLabel(cars.length)}
+        {lowest !== null && ` · ${d.common.from} ${formatPrice(lowest, locale)} / ${d.common.perDay}`}
+      </p>
+
+      {cars.length === 0 ? (
+        <div class="alert">
+          <p style="margin:0 0 1rem">{d.cars.empty}</p>
+          <a class="btn btn--wa" href={genericWhatsappLink(locale)} target="_blank" rel="noopener">
+            <Icon name="whatsapp" size={19} />
+            {d.common.whatsappCta}
+          </a>
+        </div>
+      ) : (
+        <div class="grid grid--cars">
+          {cars.map((car, index) => (
+            <CarCard car={car} locale={locale} priority={index < 3} />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container">
+      <div class="cta">
+        <h2>{d.home.ctaHeading}</h2>
+        <p>{d.home.ctaText}</p>
+        <div class="btn-row">
+          <a class="btn btn--wa btn--lg" href={genericWhatsappLink(locale)} target="_blank" rel="noopener" data-wa="cars-cta">
+            <Icon name="whatsapp" size={22} />
+            {d.common.whatsappCta}
+          </a>
+          <a class="btn btn--ghost btn--lg" href={path('reserve', locale)}>
+            {d.nav.reserve}
+            <Icon name="arrow" size={18} />
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

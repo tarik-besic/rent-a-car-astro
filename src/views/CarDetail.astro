@@ -1,0 +1,255 @@
+---
+import Base from '~/layouts/Base.astro';
+import CarCard from '~/components/CarCard.astro';
+import Icon from '~/components/Icon.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { site } from '~/config/site';
+import { abs, path, t, type Locale } from '~/i18n';
+import { getRelatedCars, type Car } from '~/lib/cars';
+import { imageUrl, resolveImage } from '~/lib/image';
+import { formatPrice, truncate } from '~/lib/format';
+import { breadcrumbSchema, carSchema } from '~/lib/schema';
+import { carWhatsappLink } from '~/lib/whatsapp';
+
+interface Props {
+  locale: Locale;
+  car: Car;
+}
+
+const { locale, car } = Astro.props;
+const d = t(locale);
+
+const related = await getRelatedCars(Astro.locals.runtime.env.DB, car, 3);
+
+const gallery = [car.image, ...car.images].filter(Boolean);
+const main = resolveImage(gallery[0] ?? '', { width: 1200, height: 800 });
+const thumbs = gallery.slice(0, 6).map((source) => ({
+  full: resolveImage(source, { width: 1200, height: 800 }),
+  thumb: resolveImage(source, { width: 240, height: 160 }),
+}));
+
+const priceText = car.pricePerDay !== null ? formatPrice(car.pricePerDay, locale) : '';
+const title = d.car.titleTemplate(car.name);
+const description =
+  car.description[locale] && car.description[locale].length > 60
+    ? truncate(car.description[locale], 165)
+    : d.car.descriptionTemplate(car.name, car.pricePerDay !== null ? String(car.pricePerDay) : '');
+
+const specs = [
+  car.year && { icon: 'calendar', label: d.common.specs.year, value: String(car.year) },
+  car.transmission && { icon: 'gear', label: d.common.specs.transmission, value: d.common.values[car.transmission] },
+  car.fuel && { icon: 'fuel', label: d.common.specs.fuel, value: d.common.values[car.fuel] },
+  car.seats && { icon: 'users', label: d.common.specs.seats, value: String(car.seats) },
+  car.doors && { icon: 'door', label: d.common.specs.doors, value: String(car.doors) },
+  car.category && { icon: 'tag', label: d.common.specs.category, value: car.category },
+  { icon: 'snow', label: d.common.specs.ac, value: car.ac ? d.common.values.yes : d.common.values.no },
+  car.consumption && { icon: 'bolt', label: d.common.specs.consumption, value: car.consumption },
+].filter(Boolean) as { icon: 'calendar'; label: string; value: string }[];
+
+const ogImage = gallery[0] ? imageUrl(gallery[0], { width: 1200, height: 630 }) : undefined;
+
+const schema = [
+  breadcrumbSchema([
+    { name: d.nav.home, url: abs(path('home', locale)) },
+    { name: d.nav.cars, url: abs(path('cars', locale)) },
+    { name: car.name, url: abs(path('car', locale, car.slug)) },
+  ]),
+  carSchema(
+    car,
+    locale,
+    gallery.slice(0, 4).map((source) => imageUrl(source, { width: 1200, height: 800 })),
+  ),
+];
+
+const reserveHref = `${path('reserve', locale)}?car=${encodeURIComponent(car.slug)}`;
+---
+
+<Base
+  locale={locale}
+  routeKey="car"
+  slug={car.slug}
+  title={title}
+  description={description}
+  ogType="product"
+  ogImage={ogImage?.startsWith('http') ? ogImage : undefined}
+  schema={schema}
+>
+  <section class="section">
+    <div class="container">
+      <Breadcrumbs
+        items={[
+          { name: d.nav.home, href: path('home', locale) },
+          { name: d.nav.cars, href: path('cars', locale) },
+          { name: car.name },
+        ]}
+      />
+
+      <div class="detail">
+        <div>
+          <div class="gallery" aria-label={d.car.galleryLabel}>
+            <div class="gallery__main">
+              <img
+                id="gallery-main"
+                src={main.src}
+                srcset={main.srcset || undefined}
+                sizes="(max-width: 960px) 100vw, 700px"
+                width={main.width}
+                height={main.height}
+                alt={car.name}
+                fetchpriority="high"
+                decoding="sync"
+              />
+            </div>
+
+            {thumbs.length > 1 && (
+              <div class="gallery__thumbs" role="tablist" aria-label={d.car.galleryLabel}>
+                {thumbs.map((item, index) => (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={index === 0}
+                    data-full={item.full.src}
+                    data-srcset={item.full.srcset}
+                  >
+                    <img
+                      src={item.thumb.src}
+                      width={item.thumb.width}
+                      height={item.thumb.height}
+                      alt={`${car.name} — ${index + 1}`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <h1 style="margin-top:1.75rem">{car.name}</h1>
+
+          {car.description[locale] && <p class="lead">{car.description[locale]}</p>}
+
+          <h2 style="margin-top:2.25rem">{d.car.specsHeading}</h2>
+          <ul class="specs">
+            {specs.map((spec) => (
+              <li>
+                <span class="k">{spec.label}</span>
+                <div class="v">{spec.value}</div>
+              </li>
+            ))}
+          </ul>
+
+          {car.features.length > 0 && (
+            <>
+              <h2 style="margin-top:2.25rem">{d.car.featuresHeading}</h2>
+              <ul class="chips">
+                {car.features.map((feature) => (
+                  <li class="pill"><Icon name="check" size={13} />{feature}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+
+        <aside class="detail__aside">
+          <div class="price-box">
+            {car.pricePerDay !== null ? (
+              <>
+                <div class="price-box__main">
+                  <b>{priceText}</b>
+                  <span class="muted">/ {d.common.perDay}</span>
+                </div>
+                <p class="muted" style="margin:0;font-size:.88rem">{d.car.pricingNote}</p>
+
+                {(car.price3Day !== null || car.price7Day !== null || car.deposit !== null) && (
+                  <div class="price-box__tiers">
+                    {car.price3Day !== null && (
+                      <div><span>{d.car.pricing3}</span><b>{formatPrice(car.price3Day, locale)}</b></div>
+                    )}
+                    {car.price7Day !== null && (
+                      <div><span>{d.car.pricing7}</span><b>{formatPrice(car.price7Day, locale)}</b></div>
+                    )}
+                    {car.deposit !== null && (
+                      <div>
+                        <span>{d.common.deposit}</span>
+                        <b>{car.deposit === 0 ? d.common.noDeposit : formatPrice(car.deposit, locale)}</b>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p style="margin:0 0 1rem"><b>{d.common.whatsappCta}</b></p>
+            )}
+
+            <span class={`pill ${car.available ? 'pill--in' : 'pill--out'}`} style="margin-bottom:1rem">
+              {car.available ? d.common.available : d.common.unavailable}
+            </span>
+
+            <div class="stack" style="margin-top:1rem">
+              <a
+                class="btn btn--wa btn--lg btn--block"
+                href={carWhatsappLink(locale, car.name)}
+                target="_blank"
+                rel="noopener"
+                data-wa="detail"
+              >
+                <Icon name="whatsapp" size={22} />
+                {d.common.whatsappCta}
+              </a>
+              <a class="btn btn--ghost btn--block" href={reserveHref}>
+                <Icon name="calendar" size={18} />
+                {d.nav.reserve}
+              </a>
+              <a class="btn btn--ghost btn--block" href={`tel:${site.phone}`}>
+                <Icon name="phone" size={18} />
+                {site.phoneDisplay}
+              </a>
+            </div>
+
+            <h3 style="margin:1.6rem 0 .4rem;font-size:.82rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim)">
+              {d.car.includedHeading}
+            </h3>
+            <ul class="included">
+              {d.car.included.map((item) => (
+                <li><Icon name="check" size={15} />{item}</li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  {related.length > 0 && (
+    <section class="section section--alt">
+      <div class="container">
+        <div class="section-head">
+          <h2>{d.car.relatedHeading}</h2>
+        </div>
+        <div class="grid grid--cars">
+          {related.map((item) => <CarCard car={item} locale={locale} />)}
+        </div>
+      </div>
+    </section>
+  )}
+</Base>
+
+<script is:inline>
+  // Gallery thumbnails: swap the main image source. No library needed.
+  (() => {
+    const main = document.getElementById('gallery-main');
+    const thumbs = document.querySelectorAll('.gallery__thumbs button');
+    if (!main || thumbs.length < 2) return;
+
+    thumbs.forEach((button) => {
+      button.addEventListener('click', () => {
+        const full = button.dataset.full;
+        if (!full) return;
+        main.src = full;
+        main.srcset = button.dataset.srcset || '';
+        thumbs.forEach((other) => other.setAttribute('aria-selected', String(other === button)));
+      });
+    });
+  })();
+</script>

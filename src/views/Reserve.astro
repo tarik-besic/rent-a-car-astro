@@ -1,0 +1,290 @@
+---
+import Base from '~/layouts/Base.astro';
+import Icon from '~/components/Icon.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { site } from '~/config/site';
+import { abs, path, t, type Locale } from '~/i18n';
+import { getPublishedCars } from '~/lib/cars';
+import { formatPrice } from '~/lib/format';
+import { breadcrumbSchema } from '~/lib/schema';
+import { genericWhatsappLink } from '~/lib/whatsapp';
+import type { ReservationState } from '~/lib/reservation';
+
+interface Props {
+  locale: Locale;
+  state: ReservationState;
+}
+
+const { locale, state } = Astro.props;
+const d = t(locale);
+
+const cars = await getPublishedCars(Astro.locals.runtime.env.DB);
+const values = state.values;
+
+/**
+ * Handed to the client script so it can keep the mailto: link and the price
+ * estimate in step with the form. Everything the script needs is here — it
+ * never re-fetches anything.
+ */
+const clientConfig = {
+  prices: Object.fromEntries(
+    cars.filter((car) => car.pricePerDay !== null).map((car) => [car.name, car.pricePerDay]),
+  ),
+  currency: site.currency.symbol,
+  estimateLabel: d.reserve.estimateLabel,
+  dayWords: [d.reserve.days(1), d.reserve.days(2)],
+  dateLocale: locale === 'bs' ? 'bs-BA' : 'en-GB',
+  mail: {
+    to: site.email,
+    subject: d.reserve.mailSubject,
+    greeting: d.whatsapp.reservation,
+    labels: d.whatsapp.fields,
+  },
+};
+
+const schema = [
+  breadcrumbSchema([
+    { name: d.nav.home, url: abs(path('home', locale)) },
+    { name: d.nav.reserve, url: abs(path('reserve', locale)) },
+  ]),
+];
+---
+
+<Base
+  locale={locale}
+  routeKey="reserve"
+  title={d.reserve.title}
+  description={d.reserve.description}
+  schema={schema}
+>
+  <section class="section">
+    <div class="container" style="max-width:900px">
+      <Breadcrumbs
+        items={[{ name: d.nav.home, href: path('home', locale) }, { name: d.nav.reserve }]}
+      />
+
+      <div class="section-head">
+        <h1>{d.reserve.h1}</h1>
+        <p>{d.reserve.intro}</p>
+      </div>
+
+      {/* The WhatsApp shortcut sits above the form: most visitors never scroll past it. */}
+      <div class="cta" style="text-align:left;margin-bottom:2rem">
+        <h2 style="font-size:1.35rem">{d.reserve.whatsappBoxHeading}</h2>
+        <p style="margin-inline:0">{d.reserve.whatsappBoxText}</p>
+        <div class="btn-row" style="justify-content:flex-start;margin-top:1.25rem">
+          <a
+            class="btn btn--wa btn--lg"
+            href={genericWhatsappLink(locale)}
+            target="_blank"
+            rel="noopener"
+            data-wa="reserve-top"
+          >
+            <Icon name="whatsapp" size={22} />
+            {site.phoneDisplay}
+          </a>
+          <a class="btn btn--ghost" href={`tel:${site.phone}`}>
+            <Icon name="phone" size={18} />
+            {d.common.callCta}
+          </a>
+        </div>
+      </div>
+
+      <form class="form" method="POST" id="reservation-form">
+        <h2 style="font-size:1.2rem;margin:0">{d.reserve.formHeading}</h2>
+
+        <div class="field">
+          <label for="car">{d.reserve.labels.car}</label>
+          <select id="car" name="car">
+            <option value="">{d.reserve.labels.carAny}</option>
+            {cars.map((car) => (
+              <option value={car.name} selected={values.car === car.name}>
+                {car.name}
+                {car.pricePerDay !== null && ` — ${formatPrice(car.pricePerDay, locale)}/${d.common.perDay}`}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div class="form__row form__row--2">
+          <div class="field">
+            <label for="pickupDate">{d.reserve.labels.pickupDate} <span class="req">*</span></label>
+            <input type="date" id="pickupDate" name="pickupDate" value={values.pickupDate} required />
+          </div>
+          <div class="field">
+            <label for="returnDate">{d.reserve.labels.returnDate}</label>
+            <input type="date" id="returnDate" name="returnDate" value={values.returnDate} />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="pickupPlace">{d.reserve.labels.pickupPlace}</label>
+          <input
+            type="text"
+            id="pickupPlace"
+            name="pickupPlace"
+            list="places"
+            value={values.pickupPlace}
+            autocomplete="off"
+          />
+          <datalist id="places">
+            {site.serviceAreas.map((area) => <option value={area} />)}
+          </datalist>
+        </div>
+
+        <div class="form__row form__row--2">
+          <div class="field">
+            <label for="name">{d.reserve.labels.name} <span class="req">*</span></label>
+            <input type="text" id="name" name="name" value={values.name} autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="phone">{d.reserve.labels.phone} <span class="req">*</span></label>
+            <input type="tel" id="phone" name="phone" value={values.phone} autocomplete="tel" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">{d.reserve.labels.email}</label>
+          <input type="email" id="email" name="email" value={values.email} autocomplete="email" />
+        </div>
+
+        <div class="field">
+          <label for="note">{d.reserve.labels.note}</label>
+          <textarea id="note" name="note" placeholder={d.reserve.labels.notePlaceholder}>{values.note}</textarea>
+        </div>
+
+        <p class="form__estimate" id="estimate" hidden>
+          <span id="estimate-days"></span>
+          <b id="estimate-total"></b>
+        </p>
+
+        <div class="btn-row">
+          <button class="btn btn--wa btn--lg" type="submit" name="via" value="whatsapp" data-wa="reserve-form">
+            <Icon name="whatsapp" size={21} />
+            {d.reserve.submitWhatsapp}
+          </button>
+
+          {/*
+            A plain mailto: anchor, not a submit button — clicking it always
+            hands off to the visitor's own mail app with the message already
+            written. Nothing is sent from the server, so there is no transport
+            to configure and no delivery to fail. The href starts out filled
+            with whatever the page was loaded with and the script below keeps
+            it in sync as the form is typed into.
+          */}
+          <a class="btn btn--ghost btn--lg" id="mailto-link" href={state.mailto}>
+            <Icon name="mail" size={19} />
+            {d.reserve.submitEmail}
+          </a>
+        </div>
+
+        <p class="form__note">{d.reserve.emailFallbackNote}</p>
+      </form>
+    </div>
+  </section>
+</Base>
+
+<script
+  is:inline
+  type="application/json"
+  id="reserve-config"
+  set:html={JSON.stringify(clientConfig)}
+/>
+
+<script is:inline>
+  // Progressive enhancement. Without this the WhatsApp button still works
+  // (server-side POST) and the mailto: link still carries the preselected car.
+  (() => {
+    const form = document.getElementById('reservation-form');
+    const configEl = document.getElementById('reserve-config');
+    const mailtoLink = document.getElementById('mailto-link');
+    if (!form || !configEl || !mailtoLink) return;
+
+    const cfg = JSON.parse(configEl.textContent || '{}');
+    const L = cfg.mail.labels;
+
+    const field = (id) => form.querySelector('#' + id);
+    const car = field('car');
+    const pickup = field('pickupDate');
+    const ret = field('returnDate');
+    const place = field('pickupPlace');
+    const name = field('name');
+    const phone = field('phone');
+    const email = field('email');
+    const note = field('note');
+
+    const box = document.getElementById('estimate');
+    const daysEl = document.getElementById('estimate-days');
+    const totalEl = document.getElementById('estimate-total');
+
+    const today = new Date().toISOString().slice(0, 10);
+    pickup.min = today;
+    ret.min = today;
+
+    const parseDay = (value) => Date.parse(value + 'T00:00:00Z');
+
+    // Matches the server's formatting so both channels read identically.
+    const formatDate = (value) => {
+      if (!value) return '';
+      const stamp = parseDay(value);
+      if (Number.isNaN(stamp)) return value;
+      return new Date(stamp).toLocaleDateString(cfg.dateLocale, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        timeZone: 'UTC',
+      });
+    };
+
+    const buildBody = () => {
+      const lines = [cfg.mail.greeting];
+      const add = (label, value) => {
+        const clean = (value || '').trim();
+        if (clean) lines.push(label + ': ' + clean);
+      };
+      add(L.car, car.value);
+      add(L.pickup, formatDate(pickup.value));
+      add(L.ret, formatDate(ret.value));
+      add(L.place, place.value);
+      add(L.name, name.value);
+      add(L.phone, phone.value);
+      add(L.email, email.value);
+      add(L.note, note.value.slice(0, 500));
+      return lines.join('\n');
+    };
+
+    const plural = (n) =>
+      n === 1 ? cfg.dayWords[0] : cfg.dayWords[1].replace(/^\d+/, String(n));
+
+    const update = () => {
+      if (pickup.value) ret.min = pickup.value;
+      if (ret.value && pickup.value && ret.value < pickup.value) ret.value = pickup.value;
+
+      const subject = car.value ? cfg.mail.subject + ': ' + car.value : cfg.mail.subject;
+      mailtoLink.href =
+        'mailto:' +
+        cfg.mail.to +
+        '?subject=' +
+        encodeURIComponent(subject) +
+        '&body=' +
+        encodeURIComponent(buildBody());
+
+      const start = parseDay(pickup.value);
+      const end = parseDay(ret.value);
+      if (!pickup.value || !ret.value || Number.isNaN(start) || Number.isNaN(end) || end < start) {
+        box.hidden = true;
+        return;
+      }
+
+      const days = Math.max(1, Math.round((end - start) / 86400000));
+      const price = cfg.prices[car.value];
+      daysEl.textContent = plural(days);
+      totalEl.textContent = price ? cfg.estimateLabel + ': ~' + days * price + ' ' + cfg.currency : '';
+      box.hidden = false;
+    };
+
+    form.addEventListener('input', update);
+    form.addEventListener('change', update);
+    update();
+  })();
+</script>

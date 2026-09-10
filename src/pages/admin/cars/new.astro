@@ -1,0 +1,39 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import CarForm from '~/components/admin/CarForm.astro';
+import { requireAdminPage } from '~/lib/admin-auth';
+import { createCar, parseCarForm } from '~/lib/car-write';
+
+const denied = await requireAdminPage(Astro);
+if (denied) return denied;
+
+const ERRORS: Record<string, string> = {
+  'marka-model': 'Marka i model su obavezni.',
+  'slug-zauzet': 'Ta URL adresa je već zauzeta. Upišite drugu u polje URL.',
+};
+
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const result = await createCar(
+    Astro.locals.runtime.env.DB,
+    parseCarForm(await Astro.request.formData()),
+  );
+
+  // Straight to the photo manager: a new car with no photos is the one thing
+  // the client always wants to fix next.
+  if (result.ok) return Astro.redirect(`/admin/cars/${result.id}?novo=1`, 303);
+
+  error = ERRORS[result.error] ?? 'Greška pri čuvanju.';
+  Astro.response.status = 400;
+}
+---
+
+<Admin title="Novo vozilo">
+  <h1>Novo vozilo</h1>
+  <p class="lead">Marka i model su dovoljni za početak — ostalo možete dodati kasnije.</p>
+
+  {error && <p class="note note--bad">{error}</p>}
+
+  <CarForm action="/admin/cars/new" submitLabel="Sačuvaj i dodaj slike" />
+</Admin>

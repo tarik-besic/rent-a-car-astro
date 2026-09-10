@@ -1,0 +1,1236 @@
+/* ------------------------------------------------------------------ *
+ * Design tokens — from "Auto Rentanje Mockups.dc.html", turn 2 (2a/2b).
+ *
+ * The direction inverted from the previous build: this is paper-first with
+ * ink-dark bands (header, hero, footer) rather than dark throughout, and the
+ * gold accent is gone. Two accents replace it, each with one job:
+ *
+ *   --wa    WhatsApp green — every "chat now" action, and nothing else.
+ *   --link  blue — prices and secondary links. Prices are deliberately
+ *           retained (mockup 1d/1e/1f) even though turn 2 dropped them:
+ *           they feed the <title> hook and the Product+Offer rich result.
+ *
+ * Single committed light direction, matching the mockups. There is no dark
+ * variant in the source design, so none is invented here — every colour is
+ * painted explicitly rather than inherited from the user agent.
+ * ------------------------------------------------------------------ */
+:root {
+  /* Ink — dark bands and primary type */
+  --ink: #14110f;
+  --ink-2: #2a2622;
+  --ink-3: #332e29;
+  --on-ink: #f7f5f1;
+
+  /* Paper — the page ground */
+  --paper: #f7f5f1;
+  --paper-2: #f0eee9;
+  --surface: #ffffff;
+
+  /* Type */
+  --text: #14110f;
+  --text-body: #4a4540;
+  --text-muted: #6b6560;
+  --text-dim: #8b857e;
+  --text-placeholder: #a8a29b;
+
+  /* Accents */
+  --wa: #128c4a;
+  --wa-strong: #0f7a40;
+  --link: #1e40af;
+
+  --line: rgb(0 0 0 / 0.12);
+  --line-strong: rgb(0 0 0 / 0.2);
+  --line-ink: rgb(247 245 241 / 0.14);
+
+  --danger: #7c2d12;
+  --ok: #128c4a;
+
+  /* Photo placeholders — the mockups' hatch, light and dark */
+  --hatch: repeating-linear-gradient(135deg, #e4e0d8 0 8px, #eeebe4 8px 16px);
+  --hatch-ink: repeating-linear-gradient(135deg, #2a2622 0 9px, #332e29 9px 18px);
+
+  --radius-sm: 6px;
+  --radius-btn: 9px;
+  --radius: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-pill: 20px;
+
+  --shadow-sm: 0 1px 2px rgb(20 17 15 / 0.06);
+  --shadow: 0 8px 24px -10px rgb(20 17 15 / 0.18);
+
+  --container: 1180px;
+  --gutter: clamp(1rem, 4vw, 3.5rem);
+
+  --font: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  /* Eyebrows, spec lines, badges — everything the mockups set in mono. */
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --header-h: 66px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Type scale
+ * The mockups run very tight tracking on display sizes (-.05em at 108px,
+ * -.035em at 30px) and loosen it as size drops. That is what makes the
+ * headline read as a block rather than a sentence.
+ * ------------------------------------------------------------------ */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+h2 {
+  font-size: clamp(1.75rem, 4.2vw, 2.875rem);
+  letter-spacing: -0.04em;
+}
+
+h3 {
+  font-size: 1.375rem;
+  letter-spacing: -0.03em;
+}
+
+p {
+  margin: 0 0 0.85rem;
+  text-wrap: pretty;
+}
+
+p:last-child { margin-bottom: 0; }
+
+.lead {
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 60ch;
+}
+
+.muted { color: var(--text-muted); }
+
+/* Uppercase mono label — the mockups' most repeated device. */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -120%);
+  z-index: 100;
+  background: var(--ink);
+  color: var(--on-ink);
+  padding: 0.7rem 1.1rem;
+  border-radius: 0 0 var(--radius-btn) var(--radius-btn);
+  font-weight: 600;
+}
+
+.skip-link:focus-visible { transform: translate(-50%, 0); }
+
+/* ------------------------------------------------------------------ *
+ * Layout
+ * ------------------------------------------------------------------ */
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+.section {
+  padding-block: clamp(2.75rem, 6vw, 4rem);
+}
+
+.section--alt { background: var(--paper-2); }
+.section--tight { padding-block: clamp(2rem, 4vw, 2.75rem); }
+.section--flush { padding-top: 0; }
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+/* The "See all 6 cars →" link beside a section heading. */
+.section-head a:not(.btn) {
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--link);
+}
+
+.section-head a:not(.btn):hover { text-decoration: underline; }
+
+.stack { display: grid; gap: 1rem; }
+
+.grid { display: grid; gap: 1.25rem; }
+.grid--cars { grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); }
+.grid--3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.grid--4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }
+
+/* ------------------------------------------------------------------ *
+ * Buttons
+ * Green is WhatsApp only. Ink-filled is the neutral primary that replaced
+ * the old gold. Ghost is a hairline outline, as in 1d/2b.
+ * ------------------------------------------------------------------ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
+    color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+
+.btn:active { transform: translateY(1px); }
+
+.btn--wa {
+  background: var(--wa);
+  color: #fff;
+}
+
+.btn--wa:hover { background: var(--wa-strong); }
+
+.btn--brand {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.btn--brand:hover { background: var(--ink-2); }
+
+.btn--ghost {
+  border-color: var(--ink);
+  color: var(--ink);
+  font-weight: 500;
+  background: transparent;
+}
+
+.btn--ghost:hover {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.btn--sm {
+  padding: 0.75rem 0.9rem;
+  font-size: 0.8125rem;
+}
+
+.btn--lg {
+  padding: 1.1rem 1.6rem;
+  font-size: 1.0625rem;
+}
+
+.btn--block { width: 100%; }
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+/* On an ink ground the ghost outline has to invert or it disappears. */
+.hero .btn--ghost,
+.footer .btn--ghost {
+  border-color: rgb(247 245 241 / 0.4);
+  color: var(--on-ink);
+}
+
+.hero .btn--ghost:hover,
+.footer .btn--ghost:hover {
+  background: var(--on-ink);
+  color: var(--ink);
+  border-color: var(--on-ink);
+}
+
+/* ------------------------------------------------------------------ *
+ * Pills — filter chips (1d), feature chips (1e), status badges
+ * ------------------------------------------------------------------ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.pill--in {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-ink);
+}
+
+/* "CURRENTLY RENTED" — mono, ink-filled, as in 1d and 2b. */
+.pill--out {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-ink);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.55rem;
+}
+
+/* Class badge sitting on a photo. */
+.pill--float {
+  position: absolute;
+  left: 0.7rem;
+  top: 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--surface);
+  border-color: transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.55rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* Horizontal scroll for filter chips on narrow screens, per 1d. */
+.chips--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips--scroll::-webkit-scrollbar { display: none; }
+.chips--scroll > * { flex: none; }
+
+/* ------------------------------------------------------------------ *
+ * Header — ink band, sticky
+ * ------------------------------------------------------------------ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--ink);
+  color: var(--on-ink);
+  border-bottom: 1px solid var(--line-ink);
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: var(--header-h);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--on-ink);
+  flex: none;
+}
+
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: rgb(247 245 241 / 0.1);
+  color: var(--on-ink);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.nav a {
+  color: rgb(247 245 241 / 0.75);
+  padding-block: 0.35rem;
+  transition: color 0.15s var(--ease);
+}
+
+.nav a:hover,
+.nav a[aria-current='page'] {
+  color: var(--on-ink);
+}
+
+.nav a[aria-current='page'] { border-bottom: 1px solid var(--on-ink); }
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: none;
+}
+
+.lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(247 245 241 / 0.6);
+}
+
+.lang:hover { color: var(--on-ink); }
+
+.burger {
+  display: none;
+  background: none;
+  border: 1px solid var(--line-ink);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem;
+  color: var(--on-ink);
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .burger { display: grid; place-items: center; }
+
+  .nav {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--ink);
+    border-bottom: 1px solid var(--line-ink);
+    padding: 0.5rem var(--gutter) 1rem;
+  }
+
+  .nav[data-open='false'] { display: none; }
+  .nav a { padding-block: 0.8rem; border-bottom: 1px solid var(--line-ink); }
+  .nav a[aria-current='page'] { border-bottom-color: var(--on-ink); }
+  .header__actions .btn--wa span { display: none; }
+}
+
+/* ------------------------------------------------------------------ *
+ * Hero — ink band, oversized type block (2a / 2b)
+ * ------------------------------------------------------------------ */
+.hero {
+  background: var(--ink);
+  color: var(--on-ink);
+  padding-block: clamp(2.75rem, 7vw, 4.75rem);
+}
+
+.hero__grid {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3.5rem);
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .hero__grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
+}
+
+/* The headline is the design. 108px at 1440 in the mockup, fluid here. */
+.hero__title {
+  font-size: clamp(2.875rem, 8.5vw, 6.75rem);
+  line-height: 0.87;
+  letter-spacing: -0.05em;
+  margin: 0;
+}
+
+.hero__price {
+  display: inline-block;
+  margin: 1.25rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--on-ink);
+  background: rgb(247 245 241 / 0.1);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+}
+
+.hero__body {
+  margin-top: 1.5rem;
+  max-width: 34ch;
+  font-size: 1.1875rem;
+  line-height: 1.5;
+  color: rgb(247 245 241 / 0.7);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 2rem;
+}
+
+.hero__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+  color: rgb(247 245 241 / 0.65);
+}
+
+.hero__trust li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hero__tick { color: var(--wa); font-weight: 700; }
+
+.hero__photo {
+  margin: 0;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: var(--hatch-ink);
+}
+
+.hero__photo img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+/* ---- Quick enquiry card in the hero (2a / 2b) --------------------- *
+ * A paper card on the ink hero. Posts to the reservation route, which
+ * answers with a 303 to wa.me — so it works with JS disabled, like every
+ * other conversion path on the site. */
+.quick {
+  background: var(--paper);
+  color: var(--text);
+  border-radius: var(--radius-xl);
+  padding: clamp(1.25rem, 2.5vw, 1.625rem);
+}
+
+.quick__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 1.25rem;
+}
+
+.quick__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+}
+
+.quick__note {
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ *
+ * Cards — white, hairline border, mono spec line, blue price (1d / 2b)
+ * ------------------------------------------------------------------ */
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow);
+}
+
+.card__media {
+  position: relative;
+  background: var(--hatch);
+}
+
+.card__media img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.125rem;
+  flex: 1;
+}
+
+.card__title {
+  font-size: 1.375rem;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.card__price b {
+  font-size: 1.3125rem;
+  font-weight: 700;
+  color: var(--link);
+  letter-spacing: -0.02em;
+}
+
+.card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+/* Details is the wide one; the WhatsApp icon button sits beside it. */
+.card__actions .btn--ghost { flex: 1; }
+
+/* A rented car is dimmed but still indexed and still clickable. */
+.card:has(.pill--out) { opacity: 0.72; }
+
+/* ------------------------------------------------------------------ *
+ * Car detail
+ * ------------------------------------------------------------------ */
+.detail {
+  display: grid;
+  gap: clamp(1.75rem, 4vw, 3rem);
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .detail { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); }
+  .detail__aside { position: sticky; top: calc(var(--header-h) + 1.5rem); }
+}
+
+.gallery { display: grid; gap: 0.6rem; }
+
+.gallery__main {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--hatch);
+}
+
+.gallery__main img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.gallery__thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.gallery__thumbs img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--hatch);
+  border: 1px solid var(--line);
+}
+
+/* ---- Tiered pricing (1e) ----------------------------------------- *
+ * Rows in a bordered box, the best rate highlighted in blue. */
+.price-box {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.price-box__main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 1rem 1.125rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.price-box__main b {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--text);
+}
+
+.price-box__tiers > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-bottom: 1px solid var(--line);
+}
+
+.price-box__tiers > div:nth-child(odd) { background: var(--paper-2); }
+.price-box__tiers > div b { font-size: 0.9375rem; font-weight: 700; }
+
+/* The cheapest tier is the one worth reading — invert it. */
+.price-box__tiers > div:last-child {
+  background: var(--link);
+  color: #fff;
+  border-bottom: none;
+}
+
+/* ---- Spec grid (1e) ---------------------------------------------- *
+ * Hairline gaps rather than borders: one background showing through a
+ * 1px grid gap, so there are no doubled edges. */
+.specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.specs > * {
+  background: var(--paper);
+  padding: 0.7rem 0.75rem;
+}
+
+.specs .k {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.specs .v {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.included {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.9375rem;
+  color: var(--text-body);
+}
+
+.included li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.included li::before {
+  content: '✓';
+  color: var(--wa);
+  font-weight: 700;
+  flex: none;
+}
+
+.breadcrumbs {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.breadcrumbs a:hover { color: var(--text); text-decoration: underline; }
+
+/* ------------------------------------------------------------------ *
+ * Forms (1f)
+ * ------------------------------------------------------------------ */
+.form { display: grid; gap: 0.875rem; }
+
+.form__row { display: grid; gap: 0.875rem; }
+
+@media (min-width: 560px) {
+  .form__row--2 { grid-template-columns: 1fr 1fr; }
+}
+
+.field { display: grid; gap: 0.45rem; }
+
+.field > label,
+.field > .eyebrow {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 0.8rem 0.85rem;
+  font: 500 0.9375rem/1.3 var(--font);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-btn);
+  appearance: none;
+}
+
+.field textarea {
+  min-height: 3.5rem;
+  resize: vertical;
+  font-weight: 400;
+}
+
+.field input::placeholder,
+.field textarea::placeholder { color: var(--text-placeholder); font-weight: 400; }
+
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 1px;
+  border-color: var(--ink);
+}
+
+/* A preselected car reads as chosen — ink border, as in 1f. */
+.field select { border-color: var(--ink); }
+
+.field .req { color: var(--danger); }
+
+/* Estimate panel — ink card with the total as the loudest number (1f). */
+.form__estimate {
+  background: var(--ink);
+  color: var(--on-ink);
+  border-radius: var(--radius);
+  padding: 1rem 1.125rem;
+}
+
+.form__estimate .eyebrow {
+  color: rgb(247 245 241 / 0.55);
+  margin-bottom: 0.5rem;
+}
+
+.form__estimate b {
+  display: block;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.form__note {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+
+.alert {
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--ink);
+  border-radius: var(--radius-btn);
+  padding: 0.85rem 1rem;
+  font-size: 0.9375rem;
+  background: var(--surface);
+}
+
+.alert--ok { border-left-color: var(--ok); }
+.alert--err { border-left-color: var(--danger); }
+
+/* ------------------------------------------------------------------ *
+ * Tiles, steps, stats — supporting content blocks
+ * ------------------------------------------------------------------ */
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.125rem;
+}
+
+.tile__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--paper-2);
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+
+.step {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.step__n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2.5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * FAQ
+ * ------------------------------------------------------------------ */
+.faq {
+  border-top: 1px solid var(--line);
+}
+
+.faq details {
+  border-bottom: 1px solid var(--line);
+}
+
+.faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq summary::-webkit-details-marker { display: none; }
+
+.faq summary::after {
+  content: '+';
+  font-family: var(--mono);
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  flex: none;
+}
+
+.faq details[open] summary::after { content: '−'; }
+
+.faq__answer {
+  padding-bottom: 1.1rem;
+  color: var(--text-body);
+  max-width: 68ch;
+}
+
+/* ------------------------------------------------------------------ *
+ * Green CTA band (2b)
+ * ------------------------------------------------------------------ */
+/*
+ * A rounded green card, not a full-bleed band: the markup nests .cta inside
+ * .container, so it needs its own horizontal padding — without it the copy
+ * sits hard against the green edge.
+ *
+ * Wide enough, it splits like 2b: copy left, actions right.
+ */
+.cta {
+  background: var(--wa);
+  color: #fff;
+  border-radius: var(--radius-xl);
+  padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.5rem, 3.5vw, 2.75rem);
+  margin-block: clamp(1rem, 2.5vw, 1.75rem);
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  align-items: center;
+}
+
+@media (min-width: 800px) {
+  .cta {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  /* The button row is the second column; the heading and copy share the first. */
+  .cta h2 { grid-column: 1; }
+  .cta p { grid-column: 1; grid-row: 2; }
+  .cta .btn-row { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; }
+}
+
+.cta h2 {
+  letter-spacing: -0.04em;
+  margin: 0;
+  max-width: 24ch;
+}
+
+.cta p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.85);
+}
+
+.cta .btn-row { gap: 0.6rem; }
+
+/* Inside the green band the button has to be paper, not green-on-green. */
+.cta .btn--wa,
+.cta .btn--brand {
+  background: #fff;
+  color: var(--wa-strong);
+}
+
+.cta .btn--wa:hover,
+.cta .btn--brand:hover { background: var(--paper); }
+
+.cta .btn--ghost {
+  border-color: rgb(255 255 255 / 0.5);
+  color: #fff;
+}
+
+.cta .btn--ghost:hover {
+  background: #fff;
+  color: var(--wa-strong);
+  border-color: #fff;
+}
+
+/* ------------------------------------------------------------------ *
+ * Footer — ink band
+ * ------------------------------------------------------------------ */
+.footer {
+  background: var(--ink);
+  color: rgb(247 245 241 / 0.6);
+  padding-block: 2.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.footer__grid {
+  display: grid;
+  gap: 1.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+
+.footer h2,
+.footer h3 {
+  font-size: 0.6875rem;
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(247 245 241 / 0.45);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.14em;
+}
+
+.footer a:hover { color: var(--on-ink); text-decoration: underline; }
+
+.contact-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.contact-list li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.contact-list svg { flex: none; margin-top: 0.15rem; opacity: 0.7; }
+
+.footer__meta {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line-ink);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: rgb(247 245 241 / 0.45);
+}
+
+/* ------------------------------------------------------------------ *
+ * Floating WhatsApp button
+ * ------------------------------------------------------------------ */
+.fab {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 999px;
+  background: var(--wa);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  box-shadow: 0 6px 18px rgb(20 17 15 / 0.28);
+}
+
+.fab:hover { background: var(--wa-strong); }
+
+@media (max-width: 560px) {
+  .fab { padding: 0.9rem; }
+  .fab span { display: none; }
+}
+
+@media print {
+  .fab,
+  .header,
+  .cta { display: none; }
+  body { background: #fff; color: #000; }
+}

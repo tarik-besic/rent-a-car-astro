@@ -1,0 +1,78 @@
+---
+import Base from '~/layouts/Base.astro';
+import FaqList from '~/components/FaqList.astro';
+import Icon from '~/components/Icon.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { site, googleMapsUrl } from '~/config/site';
+import { abs, path, t, type Locale } from '~/i18n';
+import { breadcrumbSchema, faqSchema } from '~/lib/schema';
+import { genericWhatsappLink } from '~/lib/whatsapp';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const d = t(locale);
+
+const schema = [
+  breadcrumbSchema([
+    { name: d.nav.home, url: abs(path('home', locale)) },
+    { name: d.nav.faq, url: abs(path('faq', locale)) },
+  ]),
+  // FAQPage markup is what makes these questions eligible for rich results.
+  faqSchema(d.faq.items),
+];
+---
+
+<Base
+  locale={locale}
+  routeKey="faq"
+  title={d.faq.title}
+  description={d.faq.description}
+  schema={schema}
+>
+  <section class="section">
+    <div class="container">
+      <Breadcrumbs items={[{ name: d.nav.home, href: path('home', locale) }, { name: d.nav.faq }]} />
+
+      <div class="section-head">
+        <h1>{d.faq.h1}</h1>
+        <p>{d.faq.intro}</p>
+      </div>
+
+      <FaqList items={d.faq.items} openFirst={false} />
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">{d.nav.contact}</span>
+        <h2>{d.footer.contactHeading}</h2>
+      </div>
+
+      <div class="grid grid--3">
+        <a class="tile" href={genericWhatsappLink(locale)} target="_blank" rel="noopener" data-wa="faq">
+          <span class="tile__icon" style="color:var(--wa);background:color-mix(in srgb, var(--wa) 14%, transparent)">
+            <Icon name="whatsapp" size={21} />
+          </span>
+          <h3>WhatsApp</h3>
+          <p>{site.phoneDisplay}</p>
+        </a>
+
+        <a class="tile" href={`tel:${site.phone}`}>
+          <span class="tile__icon"><Icon name="phone" size={20} /></span>
+          <h3>{d.common.phone}</h3>
+          <p>{site.phoneDisplay}</p>
+        </a>
+
+        <a class="tile" href={googleMapsUrl} target="_blank" rel="noopener">
+          <span class="tile__icon"><Icon name="pin" size={20} /></span>
+          <h3>{d.common.address}</h3>
+          <p>{site.address.street}, {site.address.city}</p>
+        </a>
+      </div>
+    </div>
+  </section>
+</Base>

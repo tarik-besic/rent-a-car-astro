@@ -1,0 +1,36 @@
+# Dependencies & build output
+node_modules/
+dist/
+.astro/
+.wrangler/
+
+# ---------------------------------------------------------------------------
+# SECRETS — never commit.
+#
+# Real values live in:
+#   local dev  -> .dev.vars        (git-ignored, see below)
+#   production -> `wrangler secret put NAME`, stored by Cloudflare
+#
+# .env.example is committed on purpose: it documents the variable NAMES with
+# placeholder values and no real credentials.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Generated migration artefacts — may contain customer/business data
+import.sql
+photo-migration/
+*.sqlite
+*.sqlite3
+*.db
+
+# OS / editor / logs
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.idea/
+.vscode/

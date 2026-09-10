@@ -1,0 +1,201 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import CarForm from '~/components/admin/CarForm.astro';
+import { requireAdminPage } from '~/lib/admin-auth';
+import { getCarById } from '~/lib/cars';
+import { parseCarForm, updateCar } from '~/lib/car-write';
+import { listPhotos } from '~/lib/photos';
+import { imageUrl } from '~/lib/image';
+import { MAX_FILE_MB } from '~/lib/upload-limits';
+
+const denied = await requireAdminPage(Astro);
+if (denied) return denied;
+
+const { env } = Astro.locals.runtime;
+const id = Astro.params.id ?? '';
+
+const ERRORS: Record<string, string> = {
+  'marka-model': 'Marka i model su obavezni.',
+  'slug-zauzet': 'Ta URL adresa je već zauzeta. Upišite drugu u polje URL.',
+};
+
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const result = await updateCar(env.DB, id, parseCarForm(await Astro.request.formData()));
+  if (result.ok) return Astro.redirect('/admin?gotovo=sacuvano', 303);
+  error = ERRORS[result.error] ?? 'Greška pri čuvanju.';
+  Astro.response.status = 400;
+}
+
+const car = await getCarById(env.DB, id);
+if (!car) return Astro.redirect('/admin', 303);
+
+const photos = await listPhotos(env.DB, car.id);
+const isNew = Astro.url.searchParams.get('novo') === '1';
+---
+
+<Admin title={car.name}>
+  <h1>{car.name}</h1>
+  <p class="lead">
+    {car.visible ? (
+      <a href={`/vozila/${car.slug}`} target="_blank" rel="noopener">/vozila/{car.slug}</a>
+    ) : (
+      'Trenutno skriveno sa stranice.'
+    )}
+  </p>
+
+  {isNew && <p class="note"><strong>Vozilo je sačuvano.</strong> Dodajte slike ispod.</p>}
+  {error && <p class="note note--bad">{error}</p>}
+
+  <h2>Slike</h2>
+
+  <label class="drop" id="drop" for="picker">
+    <input id="picker" type="file" accept="image/*" multiple />
+    <strong>Odaberite slike</strong> ili ih prevucite ovdje<br />
+    <span class="hint">
+      Slike se automatski smanjuju u pregledniku prije uploada — do {MAX_FILE_MB} MB po slici.
+    </span>
+  </label>
+
+  <ul class="queue" id="queue"></ul>
+
+  {photos.length === 0 ? (
+    <p class="empty" style="margin-top:1rem">Još nema slika.</p>
+  ) : (
+    <div class="gallery" style="margin-top:1rem">
+      {photos.map((photo) => (
+        <div class="shot">
+          {photo.isCover && <span class="badge-cover">Glavna</span>}
+          <img
+            src={imageUrl(photo.key, { width: 480, height: 320 })}
+            alt=""
+            width="240"
+            height="160"
+            loading="lazy"
+          />
+          <div class="shot__bar">
+            {!photo.isCover && (
+              <form method="POST" action="/api/admin/photo/cover" style="margin:0">
+                <input type="hidden" name="carId" value={car.id} />
+                <input type="hidden" name="photoId" value={photo.id} />
+                <button class="btn btn--sm" type="submit">Glavna</button>
+              </form>
+            )}
+            <form method="POST" action="/api/admin/photo/delete" style="margin:0">
+              <input type="hidden" name="carId" value={car.id} />
+              <input type="hidden" name="photoId" value={photo.id} />
+              <button class="btn btn--sm btn--danger" type="submit">Obriši</button>
+            </form>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <h2>Podaci</h2>
+  <CarForm car={car} action={`/admin/cars/${car.id}`} submitLabel="Sačuvaj" />
+
+  <h2>Brisanje</h2>
+  <form
+    method="POST"
+    action="/api/admin/car/delete"
+    class="card"
+    onsubmit="return confirm('Obrisati vozilo i sve njegove slike? Ovo se ne može vratiti.')"
+  >
+    <input type="hidden" name="carId" value={car.id} />
+    <p class="hint" style="margin:0 0 .85rem">
+      Briše vozilo i sve slike zauvijek. Ako je vozilo samo prodano, bolje ga je
+      označiti kao <strong>skriveno</strong> — tako se može vratiti.
+    </p>
+    <button class="btn btn--danger" type="submit">Obriši vozilo</button>
+  </form>
+</Admin>
+
+{/*
+  Uploader. Resizes in a canvas and sends ONE file per request.
+
+  Both halves matter: R2 has no transformation layer and Cloudflare's image
+  resizing needs a paid plan, so the renditions have to be produced somewhere
+  free — the browser. And a Worker has a 128 MB memory ceiling, so posting 20
+  full-size photos in one multipart body (up to 240 MB) would kill the isolate.
+*/}
+<script is:inline define:vars={{ carId: car.id, variants: [480, 960, 1600] }}>
+  const picker = document.getElementById('picker');
+  const drop = document.getElementById('drop');
+  const queue = document.getElementById('queue');
+
+  const setState = (row, text, cls) => {
+    const state = row.querySelector('.state');
+    state.textContent = text;
+    state.className = `state${cls ? ` state--${cls}` : ''}`;
+  };
+
+  /** Draws the image at `width` and returns a WebP blob. */
+  async function rendition(bitmap, width) {
+    const scale = Math.min(1, width / bitmap.width);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.82));
+  }
+
+  async function upload(file) {
+    const row = document.createElement('li');
+    row.innerHTML = `<span></span><span class="state">čeka…</span>`;
+    row.firstChild.textContent = file.name;
+    queue.appendChild(row);
+
+    try {
+      setState(row, 'obrada…');
+      const bitmap = await createImageBitmap(file);
+
+      const body = new FormData();
+      body.set('carId', carId);
+      for (const width of variants) {
+        const blob = await rendition(bitmap, width);
+        if (!blob) throw new Error('resize');
+        body.set(`w${width}`, blob, `${width}.webp`);
+      }
+      bitmap.close?.();
+
+      setState(row, 'upload…');
+      const response = await fetch('/api/admin/photo/upload', { method: 'POST', body });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || 'upload');
+
+      setState(row, 'gotovo', 'ok');
+      return true;
+    } catch (error) {
+      setState(row, String(error.message || error), 'bad');
+      return false;
+    }
+  }
+
+  /** Sequential on purpose — parallel uploads from a phone just time out. */
+  async function handle(files) {
+    let ok = 0;
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+      if (await upload(file)) ok++;
+    }
+    if (ok > 0) location.reload();
+  }
+
+  picker.addEventListener('change', () => handle([...picker.files]));
+
+  for (const event of ['dragenter', 'dragover']) {
+    drop.addEventListener(event, (e) => {
+      e.preventDefault();
+      drop.classList.add('is-over');
+    });
+  }
+  drop.addEventListener('dragleave', () => drop.classList.remove('is-over'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('is-over');
+    handle([...e.dataTransfer.files]);
+  });
+</script>

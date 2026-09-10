@@ -1,0 +1,105 @@
+---
+import Icon from './Icon.astro';
+import { site, googleMapsUrl } from '~/config/site';
+import { navItems, path, t, type Locale } from '~/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const d = t(locale);
+const items = navItems(locale);
+const year = new Date().getFullYear();
+const socials = [
+  site.social.instagram && { href: site.social.instagram, label: 'Instagram' },
+  site.social.facebook && { href: site.social.facebook, label: 'Facebook' },
+].filter(Boolean) as { href: string; label: string }[];
+---
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <a class="brand" href={path('home', locale)} style="margin-bottom:1rem">
+          <span class="brand__mark"><Icon name="car" size={20} /></span>
+          {site.name}
+        </a>
+        <p class="muted" style="max-width:34ch">{d.footer.tagline}</p>
+        {socials.length > 0 && (
+          <ul style="display:flex;gap:1rem;margin-top:1rem">
+            {socials.map((social) => (
+              <li>
+                <a href={social.href} target="_blank" rel="noopener me">{social.label}</a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div>
+        <h3>{d.footer.quickLinks}</h3>
+        <ul>
+          {items.map((item) => (
+            <li><a href={item.href}>{item.label}</a></li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3>{d.footer.contactHeading}</h3>
+        <div class="contact-list">
+          <div>
+            <Icon name="whatsapp" size={17} />
+            <span>
+              WhatsApp<br />
+              <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener">
+                {site.phoneDisplay}
+              </a>
+            </span>
+          </div>
+          <div>
+            <Icon name="phone" size={17} />
+            <span>
+              {d.common.phone}<br />
+              <a href={`tel:${site.phone}`}>{site.phoneDisplay}</a>
+            </span>
+          </div>
+          <div>
+            <Icon name="mail" size={17} />
+            <span>
+              {d.common.email}<br />
+              <a href={`mailto:${site.email}`}>{site.email}</a>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3>{d.common.address}</h3>
+        <div class="contact-list">
+          <div>
+            <Icon name="pin" size={17} />
+            <address style="font-style:normal">
+              {site.address.street}<br />
+              {site.address.postalCode} {site.address.city}<br />
+              <a href={googleMapsUrl} target="_blank" rel="noopener">{d.common.openMap}</a>
+            </address>
+          </div>
+          <div>
+            <Icon name="clock" size={17} />
+            <span>
+              {d.common.hours}<br />
+              {site.openingHours.map((hours) => <span class="muted">{hours}<br /></span>)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer__meta">
+      <span>© {year} {site.name}. {d.footer.rights}</span>
+      <span>{d.footer.seoLine}</span>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,40 @@
+---
+import Base from '~/layouts/Base.astro';
+import Icon from '~/components/Icon.astro';
+import { site } from '~/config/site';
+import { path, t, type Locale } from '~/i18n';
+import { genericWhatsappLink } from '~/lib/whatsapp';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const d = t(locale);
+---
+
+<Base
+  locale={locale}
+  routeKey="home"
+  title={`${d.notFound.title} | ${site.name}`}
+  description={d.notFound.text}
+  noindex
+>
+  <section class="section">
+    <div class="container" style="max-width:640px;text-align:center">
+      <p class="eyebrow">404</p>
+      <h1>{d.notFound.h1}</h1>
+      <p class="lead" style="margin-inline:auto">{d.notFound.text}</p>
+      <div class="btn-row" style="justify-content:center;margin-top:2rem">
+        <a class="btn btn--brand btn--lg" href={path('cars', locale)}>
+          {d.common.viewCars}
+          <Icon name="arrow" size={18} />
+        </a>
+        <a class="btn btn--wa btn--lg" href={genericWhatsappLink(locale)} target="_blank" rel="noopener">
+          <Icon name="whatsapp" size={21} />
+          {d.common.whatsappShort}
+        </a>
+      </div>
+    </div>
+  </section>
+</Base>

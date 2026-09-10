@@ -1,0 +1,114 @@
+---
+import '~/styles/global.css';
+import Header from '~/components/Header.astro';
+import Footer from '~/components/Footer.astro';
+import WhatsappFab from '~/components/WhatsappFab.astro';
+import { site, SITE_URL } from '~/config/site';
+import { abs, alternates, path, t, type Locale, type RouteKey } from '~/i18n';
+import { businessSchema, graph, websiteSchema } from '~/lib/schema';
+import { truncate } from '~/lib/format';
+
+interface Props {
+  locale: Locale;
+  routeKey: RouteKey;
+  slug?: string;
+  title: string;
+  description: string;
+  /** Absolute URL of the social preview image. */
+  ogImage?: string;
+  ogType?: 'website' | 'article' | 'product';
+  /** Page-specific JSON-LD nodes, merged into the site-wide @graph. */
+  schema?: unknown[];
+  noindex?: boolean;
+}
+
+const {
+  locale,
+  routeKey,
+  slug,
+  title,
+  description,
+  ogImage,
+  ogType = 'website',
+  schema = [],
+  noindex = false,
+} = Astro.props;
+
+const d = t(locale);
+const canonical = abs(path(routeKey, locale, slug));
+const hreflangs = alternates(routeKey, slug);
+const metaDescription = truncate(description, 165);
+const image = ogImage ?? `${SITE_URL}/og-default.png`;
+
+const jsonLd = graph([businessSchema(locale), websiteSchema(locale), ...schema]);
+---
+
+<!doctype html>
+<html lang={d.meta.htmlLang} prefix="og: https://ogp.me/ns#">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{title}</title>
+    <meta name="description" content={metaDescription} />
+    <link rel="canonical" href={canonical} />
+
+    {noindex
+      ? <meta name="robots" content="noindex, follow" />
+      : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />}
+
+    {/* Translated URLs, declared to Google in both directions. */}
+    {hreflangs.map((alt) => (
+      <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
+    ))}
+
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={d.meta.ogLocale} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.name} — ${d.nav.home}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Ink, matching the sticky header the browser chrome sits against. -->
+    <meta name="theme-color" content="#14110f" />
+
+    <!--
+      Instrument Sans + JetBrains Mono, per the mockups. Preconnect because
+      the fonts are on a second origin and the headline is the LCP element;
+      `display=swap` means text paints immediately in the fallback.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <meta name="format-detection" content="telephone=yes" />
+    <meta name="geo.region" content={`${site.address.countryCode}`} />
+    <meta name="geo.placename" content={site.address.city} />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">{d.common.skipToContent}</a>
+    <Header locale={locale} routeKey={routeKey} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer locale={locale} />
+    <WhatsappFab locale={locale} />
+  </body>
+</html>

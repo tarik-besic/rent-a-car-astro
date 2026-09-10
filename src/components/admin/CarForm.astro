@@ -1,0 +1,156 @@
+---
+import type { Car } from '~/lib/cars';
+
+/**
+ * The car editor, shared by /admin/cars/new and /admin/cars/[id].
+ *
+ * Deliberately a plain form that posts to itself: no client-side framework,
+ * no JSON API, no optimistic UI. One operator editing one car at a time does
+ * not need any of that, and a form POST cannot get stuck in a half-saved
+ * state the way a fetch-based editor can.
+ */
+
+interface Props {
+  car?: Car;
+  action: string;
+  submitLabel: string;
+}
+
+const { car, action, submitLabel } = Astro.props;
+
+const CATEGORIES = ['Ekonomično', 'Kompakt', 'Limuzina', 'SUV', 'Kombi', 'Luksuzno'];
+const value = (v: string | number | null | undefined): string =>
+  v === null || v === undefined ? '' : String(v);
+---
+
+<form method="POST" action={action} class="card">
+  <div class="grid">
+    <div class="field">
+      <label for="make">Marka *</label>
+      <input id="make" name="make" type="text" required value={value(car?.make)} placeholder="Volkswagen" />
+    </div>
+    <div class="field">
+      <label for="model">Model *</label>
+      <input id="model" name="model" type="text" required value={value(car?.model)} placeholder="Golf 8" />
+    </div>
+    <div class="field">
+      <label for="year">Godina</label>
+      <input id="year" name="year" type="number" min="1980" max="2100" value={value(car?.year)} />
+    </div>
+
+    <div class="field">
+      <label for="category">Klasa</label>
+      <input id="category" name="category" type="text" list="categories" value={value(car?.category)} />
+      <datalist id="categories">
+        {CATEGORIES.map((c) => <option value={c}></option>)}
+      </datalist>
+    </div>
+    <div class="field">
+      <label for="transmission">Mjenjač</label>
+      <select id="transmission" name="transmission">
+        <option value="" selected={!car?.transmission}>—</option>
+        <option value="manual" selected={car?.transmission === 'manual'}>Manuelni</option>
+        <option value="automatic" selected={car?.transmission === 'automatic'}>Automatik</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="fuel">Gorivo</label>
+      <select id="fuel" name="fuel">
+        <option value="" selected={!car?.fuel}>—</option>
+        <option value="diesel" selected={car?.fuel === 'diesel'}>Dizel</option>
+        <option value="petrol" selected={car?.fuel === 'petrol'}>Benzin</option>
+        <option value="hybrid" selected={car?.fuel === 'hybrid'}>Hibrid</option>
+        <option value="electric" selected={car?.fuel === 'electric'}>Električni</option>
+        <option value="lpg" selected={car?.fuel === 'lpg'}>Plin</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="seats">Sjedišta</label>
+      <input id="seats" name="seats" type="number" min="1" max="9" value={value(car?.seats)} />
+    </div>
+    <div class="field">
+      <label for="doors">Vrata</label>
+      <input id="doors" name="doors" type="number" min="2" max="6" value={value(car?.doors)} />
+    </div>
+    <div class="field">
+      <label for="consumption">Potrošnja</label>
+      <input id="consumption" name="consumption" type="text" value={value(car?.consumption)} placeholder="5.2 l/100km" />
+    </div>
+
+    <div class="field">
+      <label for="pricePerDay">Cijena / dan</label>
+      <input id="pricePerDay" name="pricePerDay" type="text" inputmode="decimal" value={value(car?.pricePerDay)} placeholder="60" />
+      <p class="hint">Samo broj. "60 KM" također radi.</p>
+    </div>
+    <div class="field">
+      <label for="price3Day">Cijena 3+ dana</label>
+      <input id="price3Day" name="price3Day" type="text" inputmode="decimal" value={value(car?.price3Day)} />
+    </div>
+    <div class="field">
+      <label for="price7Day">Cijena 7+ dana</label>
+      <input id="price7Day" name="price7Day" type="text" inputmode="decimal" value={value(car?.price7Day)} />
+    </div>
+
+    <div class="field">
+      <label for="deposit">Depozit</label>
+      <input id="deposit" name="deposit" type="text" inputmode="decimal" value={value(car?.deposit)} />
+      <p class="hint">0 se prikazuje kao "Bez depozita".</p>
+    </div>
+    <div class="field">
+      <label for="order">Redoslijed</label>
+      <input id="order" name="order" type="number" value={value(car?.order ?? 0)} />
+      <p class="hint">Manji broj = više na listi.</p>
+    </div>
+    <div class="field">
+      <label for="slug">URL (slug)</label>
+      <input id="slug" name="slug" type="text" value={value(car?.slug)} placeholder="automatski" />
+      <p class="hint">Ostavite prazno da se napravi sam. Ne mijenjajte kasnije — Google pamti staru adresu.</p>
+    </div>
+
+    <div class="field field--wide">
+      <label for="features">Oprema</label>
+      <input id="features" name="features" type="text" value={car ? car.features.join(', ') : ''} placeholder="Bluetooth, Parking senzori, Tempomat" />
+      <p class="hint">Odvojite zapetom.</p>
+    </div>
+
+    <div class="field field--wide">
+      <label for="descriptionBs">Opis (bosanski)</label>
+      <textarea id="descriptionBs" name="descriptionBs">{value(car?.description.bs)}</textarea>
+    </div>
+    <div class="field field--wide">
+      <label for="descriptionEn">Opis (engleski)</label>
+      <textarea id="descriptionEn" name="descriptionEn">{value(car?.description.en)}</textarea>
+    </div>
+  </div>
+
+  <div class="checks">
+    <label class="check">
+      <input type="checkbox" name="visible" checked={car ? car.visible : true} />
+      Vidljivo na stranici
+    </label>
+    <label class="check">
+      <input type="checkbox" name="available" checked={car ? car.available : true} />
+      Dostupno za najam
+    </label>
+    <label class="check">
+      <input type="checkbox" name="featured" checked={car ? car.featured : false} />
+      Istaknuto na naslovnoj
+    </label>
+    <label class="check">
+      <input type="checkbox" name="ac" checked={car ? car.ac : true} />
+      Klima
+    </label>
+  </div>
+
+  <p class="hint" style="margin-bottom:1rem">
+    <strong>Skriveno</strong> uklanja vozilo sa stranice u potpunosti.
+    <strong>Nedostupno</strong> ga ostavlja na stranici, označeno kao trenutno izdato —
+    tako zadržava svoju poziciju na Googleu.
+  </p>
+
+  <div class="actions">
+    <button class="btn btn--primary" type="submit">{submitLabel}</button>
+    <a class="btn" href="/admin">Odustani</a>
+  </div>
+</form>

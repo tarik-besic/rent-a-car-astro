@@ -1,0 +1,11 @@
+---
+import CarDetail from '~/views/CarDetail.astro';
+import NotFound from '~/views/NotFound.astro';
+import { getCar } from '~/lib/cars';
+
+const car = await getCar(Astro.locals.runtime.env.DB, Astro.params.slug ?? '');
+
+if (!car) Astro.response.status = 404;
+---
+
+{car ? <CarDetail locale="en" car={car} /> : <NotFound locale="en" />}

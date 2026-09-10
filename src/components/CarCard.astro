@@ -1,0 +1,88 @@
+---
+import Icon from './Icon.astro';
+import type { Car } from '~/lib/cars';
+import { resolveImage } from '~/lib/image';
+import { formatPrice } from '~/lib/format';
+import { path, t, type Locale } from '~/i18n';
+import { carWhatsappLink } from '~/lib/whatsapp';
+
+interface Props {
+  car: Car;
+  locale: Locale;
+  /** The first card above the fold should not be lazy-loaded. */
+  priority?: boolean;
+}
+
+const { car, locale, priority = false } = Astro.props;
+const d = t(locale);
+const href = path('car', locale, car.slug);
+
+const image = resolveImage(car.image, { width: 640, height: 400 });
+
+const meta = [
+  car.year ? String(car.year) : null,
+  car.transmission ? d.common.values[car.transmission] : null,
+  car.fuel ? d.common.values[car.fuel] : null,
+  car.seats ? `${car.seats} ${d.common.specs.seats.toLowerCase()}` : null,
+].filter(Boolean) as string[];
+---
+
+<article class="card">
+  <div class="card__media">
+    <a href={href} tabindex="-1" aria-hidden="true">
+      <img
+        src={image.src}
+        srcset={image.srcset || undefined}
+        sizes="(max-width: 700px) 100vw, (max-width: 1180px) 45vw, 380px"
+        width={image.width}
+        height={image.height}
+        alt={d.common.carImageAlt(car.name)}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchpriority={priority ? 'high' : 'auto'}
+        decoding={priority ? 'sync' : 'async'}
+      />
+    </a>
+    {car.category && <span class="pill pill--float">{car.category}</span>}
+  </div>
+
+  <div class="card__body">
+    <h3 class="card__title"><a href={href}>{car.name}</a></h3>
+
+    {meta.length > 0 && (
+      <p class="card__meta">
+        {meta.map((item, index) => (
+          <>
+            {index > 0 && <span aria-hidden="true">·</span>}
+            <span>{item}</span>
+          </>
+        ))}
+      </p>
+    )}
+
+    <div class="card__price">
+      {car.pricePerDay !== null ? (
+        <>
+          <b>{formatPrice(car.pricePerDay, locale)}</b>
+          <span>/ {d.common.perDay}</span>
+        </>
+      ) : (
+        <span class="pill">{d.common.whatsappCta}</span>
+      )}
+      {!car.available && <span class="pill pill--out" style="margin-left:auto">{d.common.unavailable}</span>}
+    </div>
+
+    <div class="card__actions">
+      <a class="btn btn--ghost btn--sm" href={href}>{d.common.viewDetails}</a>
+      <a
+        class="btn btn--wa btn--sm"
+        href={carWhatsappLink(locale, car.name)}
+        target="_blank"
+        rel="noopener"
+        aria-label={`${d.common.whatsappCta} — ${car.name}`}
+        data-wa="card"
+      >
+        <Icon name="whatsapp" size={17} />
+      </a>
+    </div>
+  </div>
+</article>

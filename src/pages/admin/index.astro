@@ -1,0 +1,80 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { requireAdminPage } from '~/lib/admin-auth';
+import { getCars } from '~/lib/cars';
+import { imageUrl } from '~/lib/image';
+import { formatPhotoCount, formatPrice } from '~/lib/format';
+
+const denied = await requireAdminPage(Astro);
+if (denied) return denied;
+
+const cars = await getCars(Astro.locals.runtime.env.DB);
+
+const MESSAGES: Record<string, string> = {
+  sacuvano: 'Vozilo je sačuvano.',
+  obrisano: 'Vozilo je obrisano.',
+};
+const done = MESSAGES[Astro.url.searchParams.get('gotovo') ?? ''] ?? '';
+---
+
+<Admin title="Vozila">
+  <h1>Vozila</h1>
+  <p class="lead">
+    {cars.length === 0
+      ? 'Još nema vozila. Dodajte prvo — pojavit će se na stranici odmah.'
+      : `${cars.length} ${cars.length === 1 ? 'vozilo' : 'vozila'} u ponudi.`}
+  </p>
+
+  {done && <p class="note">{done}</p>}
+
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn--primary" href="/admin/cars/new">+ Novo vozilo</a>
+  </div>
+
+  <h2>Ponuda</h2>
+
+  {cars.length === 0 && <p class="empty">Lista je prazna.</p>}
+
+  {cars.map((car) => (
+    <div class="card">
+      <div class="row">
+        <div class="row__left">
+          <img
+            class="thumb"
+            src={imageUrl(car.image, { width: 480, height: 320 })}
+            alt=""
+            width="84"
+            height="56"
+            loading="lazy"
+          />
+          <div class="row__main">
+            <div class="name">{car.name}</div>
+            <div class="meta">
+              {[
+                car.pricePerDay !== null ? `${formatPrice(car.pricePerDay, 'bs')} / dan` : 'bez cijene',
+                car.category || null,
+                formatPhotoCount(car.images.length),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </div>
+            <div class="meta" style="margin-top:.4rem">
+              {!car.visible && <span class="tag tag--hidden">Skriveno</span>}
+              {car.visible && car.available && <span class="tag tag--ok">Dostupno</span>}
+              {car.visible && !car.available && <span class="tag tag--off">Izdato</span>}
+              {car.featured && <span class="tag">Istaknuto</span>}
+            </div>
+          </div>
+        </div>
+        <div class="actions" style="margin:0">
+          <a class="btn btn--sm" href={`/admin/cars/${car.id}`}>Uredi</a>
+          {car.visible && (
+            <a class="btn btn--sm" href={`/vozila/${car.slug}`} target="_blank" rel="noopener">
+              Pogledaj
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  ))}
+</Admin>

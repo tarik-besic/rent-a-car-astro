@@ -1,0 +1,167 @@
+---
+import { site } from '~/config/site';
+
+interface Props {
+  title: string;
+  /** Logged-in pages show the nav bar; the login page does not. */
+  showNav?: boolean;
+}
+
+const { title, showNav = true } = Astro.props;
+---
+
+<!doctype html>
+<html lang="bs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · {site.name}</title>
+    {/* Never index the admin area. robots.txt disallows it as well. */}
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="theme-color" content="#14110f" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!--
+      Admin styles are deliberately self-contained rather than importing
+      global.css: that stylesheet is inlined into every public page, and the
+      admin area must not add a byte to it.
+    -->
+    <style is:inline>
+      :root {
+        --bg: #0a0c0f;
+        --surface: #14191f;
+        --surface-2: #1a2129;
+        --border: #232c36;
+        --border-strong: #35404d;
+        --text: #eff3f8;
+        --muted: #9dabba;
+        --dim: #6c7a89;
+        --brand: #e9b949;
+        --brand-ink: #14181d;
+        --danger: #f2777a;
+        --ok: #6ddba0;
+        --radius: 14px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-text-size-adjust: 100%;
+      }
+      a { color: var(--brand); }
+      .wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2rem) 4rem; }
+      .top {
+        display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+        justify-content: space-between; padding: 1rem clamp(1rem, 4vw, 2rem);
+        border-bottom: 1px solid var(--border); background: #0e1216;
+      }
+      .top strong { font-size: 1.05rem; }
+      .top nav { display: flex; gap: 1rem; align-items: center; font-size: .92rem; }
+      h1 { font-size: 1.5rem; margin: 1.5rem 0 .35rem; }
+      h2 { font-size: 1rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 2rem 0 .75rem; }
+      p.lead { color: var(--muted); margin: 0 0 1.5rem; }
+      .card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: .85rem;
+      }
+      .row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
+      .row__main { min-width: 0; }
+      .name { font-weight: 650; font-size: 1.06rem; }
+      .meta { color: var(--dim); font-size: .88rem; margin-top: .2rem; }
+      .tag {
+        display: inline-block; padding: .15rem .5rem; border-radius: 999px;
+        font-size: .76rem; font-weight: 650; letter-spacing: .02em;
+        border: 1px solid var(--border-strong); color: var(--muted);
+      }
+      .tag--ok { color: var(--ok); border-color: #2c5b43; }
+      .tag--off { color: var(--danger); border-color: #5e3438; }
+      .tag--hidden { color: var(--dim); }
+      .btn {
+        display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+        border: 1px solid var(--border-strong); background: var(--surface-2);
+        color: var(--text); font: inherit; font-size: .92rem; font-weight: 600;
+        padding: .55rem .95rem; border-radius: 10px; text-decoration: none;
+      }
+      .btn:hover { border-color: var(--brand); }
+      .btn--primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+      .btn--danger:hover { border-color: var(--danger); color: var(--danger); }
+      .btn[disabled] { opacity: .5; cursor: not-allowed; }
+      .btn--sm { font-size: .84rem; padding: .4rem .7rem; }
+      .note {
+        border: 1px solid var(--border-strong); border-left: 3px solid var(--brand);
+        background: var(--surface); border-radius: 10px; padding: .85rem 1rem;
+        color: var(--muted); font-size: .92rem; margin: 0 0 1.25rem;
+      }
+      .note--bad { border-left-color: var(--danger); }
+      .note strong { color: var(--text); }
+      label { display: block; font-size: .9rem; color: var(--muted); margin-bottom: .35rem; }
+      input[type='password'], input[type='text'] {
+        width: 100%; padding: .7rem .85rem; font: inherit; color: var(--text);
+        background: #0e1216; border: 1px solid var(--border-strong); border-radius: 10px;
+      }
+      input:focus-visible, .btn:focus-visible, a:focus-visible {
+        outline: 2px solid var(--brand); outline-offset: 2px;
+      }
+      img { display: block; max-width: 100%; height: auto; background: #0e1216; }
+      .cover { border-radius: var(--radius); border: 1px solid var(--border); max-width: 420px; }
+      .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .85rem; }
+      .shot { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
+      .shot img { aspect-ratio: 3 / 2; object-fit: cover; width: 100%; }
+      .shot__bar { display: flex; gap: .4rem; padding: .5rem; flex-wrap: wrap; }
+      .empty { color: var(--dim); font-style: italic; }
+      .hidden { display: none; }
+      /* --- car form --- */
+      input[type='number'], input[type='url'], select, textarea {
+        width: 100%; padding: .7rem .85rem; font: inherit; color: var(--text);
+        background: #0e1216; border: 1px solid var(--border-strong); border-radius: 10px;
+      }
+      textarea { min-height: 5.5rem; resize: vertical; }
+      select:focus-visible, textarea:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+      .field { margin-bottom: 1rem; }
+      .field--wide { grid-column: 1 / -1; }
+      .hint { font-size: .8rem; color: var(--dim); margin-top: .3rem; }
+      .checks { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: .5rem 0 1rem; }
+      .check { display: flex; align-items: center; gap: .5rem; color: var(--text); font-size: .93rem; margin: 0; }
+      .check input { width: 1.15rem; height: 1.15rem; accent-color: var(--brand); }
+      .actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-top: 1.25rem; }
+      .actions--split { justify-content: space-between; }
+      .thumb { width: 84px; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 8px; flex: none; }
+      .row__left { display: flex; gap: .9rem; align-items: center; min-width: 0; }
+      .drop {
+        border: 2px dashed var(--border-strong); border-radius: var(--radius);
+        padding: 1.75rem 1rem; text-align: center; color: var(--muted);
+        background: var(--surface); cursor: pointer; transition: border-color .15s, background .15s;
+      }
+      .drop:hover, .drop.is-over { border-color: var(--brand); background: var(--surface-2); }
+      .drop input { display: none; }
+      .queue { list-style: none; padding: 0; margin: 1rem 0 0; font-size: .9rem; }
+      .queue li { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px solid var(--border); }
+      .queue .state { color: var(--dim); }
+      .queue .state--ok { color: var(--ok); }
+      .queue .state--bad { color: var(--danger); }
+      .badge-cover { position: absolute; top: .4rem; left: .4rem; background: var(--brand); color: var(--brand-ink); font-size: .7rem; font-weight: 700; padding: .1rem .4rem; border-radius: 6px; }
+      .shot { position: relative; }
+    </style>
+  </head>
+
+  <body>
+    {showNav && (
+      <div class="top">
+        <strong>{site.name} · vozila</strong>
+        <nav>
+          <a href="/admin">Vozila</a>
+          <a href="/" target="_blank" rel="noopener">Web stranica</a>
+          <form method="POST" action="/admin/logout" style="margin:0">
+            <button class="btn btn--sm" type="submit">Odjava</button>
+          </form>
+        </nav>
+      </div>
+    )}
+    <div class="wrap">
+      <slot />
+    </div>
+  </body>
+</html>

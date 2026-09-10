@@ -1,0 +1,59 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "auto-rentanje",
+  // The Astro Cloudflare adapter emits the Worker here (dist/_worker.js/).
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2026-09-10",
+  // Astro's server runtime touches node: built-ins; this is required, not optional.
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static assets (hashed /_astro/*, favicons, og image) are served from the
+  // edge without waking the Worker. public/.assetsignore keeps _worker.js and
+  // _routes.json out of the served asset set.
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+
+  // Car records. Replaces the Google Sheet.
+  // Created 2026-09-10 in region EEUR (closest to Bosnia).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "auto-rentanje",
+      "database_id": "290973ba-9776-4cd3-bbd4-bd0175fedf1e",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Car photos. Replaces Cloudinary.
+  // R2 must be enabled once in the Cloudflare dashboard before the bucket
+  // can be created:  npx wrangler r2 bucket create auto-rentanje-photos
+  "r2_buckets": [
+    {
+      "binding": "PHOTOS",
+      "bucket_name": "auto-rentanje-photos"
+    }
+  ],
+
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    // The top-level flag alone does not enable traces.
+    "traces": { "enabled": true, "head_sampling_rate": 0.1 }
+  },
+
+  // Business details. Non-secret, so they belong here rather than in secrets.
+  // Secrets (ADMIN_PASSWORD, ADMIN_SESSION_SECRET) are set with:
+  //   npx wrangler secret put ADMIN_PASSWORD
+  "vars": {
+    "PUBLIC_SITE_URL": "https://auto-rentanje.workers.dev",
+    "PUBLIC_BUSINESS_NAME": "Auto Rentanje",
+    "PUBLIC_WHATSAPP": "38761524541",
+    "PUBLIC_PHONE": "+38761524541",
+    "PUBLIC_PHONE_DISPLAY": "061 524 541",
+    "PUBLIC_EMAIL": "info@auto-rentanje.ba",
+    "PUBLIC_CITY": "Sarajevo",
+    "PUBLIC_CITY_LOCATIVE": "Sarajevu"
+  }
+}

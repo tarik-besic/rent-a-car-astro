@@ -1,0 +1,57 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { checkPassword, isLoggedIn, isThrottled, startSession } from '~/lib/admin-auth';
+import { isAdminConfigured } from '~/lib/secrets';
+
+const { env } = Astro.locals.runtime;
+const db = env.DB;
+const configured = isAdminConfigured(env);
+
+let error = '';
+
+if (Astro.request.method === 'POST' && configured) {
+  const data = await Astro.request.formData();
+  const password = String(data.get('password') ?? '');
+
+  if (await isThrottled(db)) {
+    error = 'Previše pokušaja. Pokušajte za 15 minuta.';
+  } else if (await checkPassword(env, db, password)) {
+    await startSession(env, Astro);
+    return Astro.redirect('/admin', 303);
+  } else {
+    error = 'Pogrešna šifra.';
+  }
+  Astro.response.status = 401;
+} else if (await isLoggedIn(env, Astro)) {
+  return Astro.redirect('/admin', 303);
+}
+---
+
+<Admin title="Prijava" showNav={false}>
+  <h1>Prijava</h1>
+
+  {!configured && (
+    <p class="note note--bad">
+      <strong>Admin nije podešen.</strong> Postavite <code>ADMIN_PASSWORD</code> i
+      <code>ADMIN_SESSION_SECRET</code> pa ponovo objavite stranicu.
+    </p>
+  )}
+
+  {error && <p class="note note--bad">{error}</p>}
+
+  <form method="POST" class="card">
+    <label for="password">Šifra</label>
+    <input
+      id="password"
+      name="password"
+      type="password"
+      autocomplete="current-password"
+      required
+      autofocus
+      disabled={!configured}
+    />
+    <div class="actions">
+      <button class="btn btn--primary" type="submit" disabled={!configured}>Prijavi se</button>
+    </div>
+  </form>
+</Admin>

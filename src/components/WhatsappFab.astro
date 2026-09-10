@@ -1,0 +1,20 @@
+---
+import Icon from './Icon.astro';
+import { t, type Locale } from '~/i18n';
+import { genericWhatsappLink, whatsappLink } from '~/lib/whatsapp';
+
+interface Props {
+  locale: Locale;
+  /** Overrides the pre-filled message, e.g. with the car being viewed. */
+  message?: string;
+}
+
+const { locale, message } = Astro.props;
+const d = t(locale);
+const href = message ? whatsappLink(message) : genericWhatsappLink(locale);
+---
+
+<a class="fab" href={href} target="_blank" rel="noopener" aria-label={d.common.whatsappCta} data-wa="fab">
+  <Icon name="whatsapp" size={26} />
+  <span>{d.common.whatsappShort}</span>
+</a>

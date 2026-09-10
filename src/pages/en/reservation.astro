@@ -1,0 +1,9 @@
+---
+import Reserve from '~/views/Reserve.astro';
+import { handleReservation } from '~/lib/reservation';
+
+const result = await handleReservation(Astro, 'en');
+if (result instanceof Response) return result;
+---
+
+<Reserve locale="en" state={result} />

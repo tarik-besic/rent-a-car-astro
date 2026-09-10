@@ -1,0 +1,85 @@
+---
+import Icon from './Icon.astro';
+import { site } from '~/config/site';
+import { navItems, otherLocale, path, t, type Locale, type RouteKey } from '~/i18n';
+import { genericWhatsappLink } from '~/lib/whatsapp';
+
+interface Props {
+  locale: Locale;
+  routeKey: RouteKey;
+}
+
+const { locale, routeKey } = Astro.props;
+const d = t(locale);
+const items = navItems(locale);
+const other = otherLocale(locale);
+
+/**
+ * The language switch keeps the visitor on the same page in the other
+ * language — but a car detail page needs its slug carried across, which the
+ * page passes down via routeKey + the current URL's last segment.
+ */
+const slug = routeKey === 'car' ? Astro.url.pathname.split('/').filter(Boolean).pop() : undefined;
+const switchHref = path(routeKey, other, slug);
+---
+
+<header class="header">
+  <div class="container header__inner">
+    <a class="brand" href={path('home', locale)} aria-label={site.name}>
+      <span class="brand__mark"><Icon name="car" size={20} /></span>
+      {site.name}
+    </a>
+
+    <nav class="nav" id="nav" aria-label={d.nav.mainLabel} data-open="false">
+      {items.map((item) => (
+        <a href={item.href} aria-current={item.key === routeKey ? 'page' : undefined}>
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="header__actions">
+      <a class="lang" href={switchHref} hreflang={other} rel="alternate" title={d.meta.switchLabel}>
+        <Icon name="globe" size={15} />
+        {other.toUpperCase()}
+      </a>
+
+      <a
+        class="btn btn--wa btn--sm"
+        href={genericWhatsappLink(locale)}
+        target="_blank"
+        rel="noopener"
+        data-wa="header"
+      >
+        <Icon name="whatsapp" size={18} />
+        <span>{d.common.whatsappShort}</span>
+      </a>
+
+      <button class="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav">
+        <Icon name="menu" size={22} />
+      </button>
+    </div>
+  </div>
+</header>
+
+<script is:inline>
+  // ~400 bytes of inline JS is cheaper than shipping a framework for one menu.
+  (() => {
+    const burger = document.querySelector('.burger');
+    const nav = document.getElementById('nav');
+    if (!burger || !nav) return;
+
+    const setOpen = (open) => {
+      nav.dataset.open = String(open);
+      burger.setAttribute('aria-expanded', String(open));
+    };
+
+    burger.addEventListener('click', () => setOpen(nav.dataset.open !== 'true'));
+    nav.addEventListener('click', (event) => {
+      if (event.target instanceof HTMLAnchorElement) setOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
