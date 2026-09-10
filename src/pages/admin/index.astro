@@ -1,18 +1,37 @@
 ---
 import Admin from '~/layouts/Admin.astro';
 import { requireAdminPage } from '~/lib/admin-auth';
-import { getCars } from '~/lib/cars';
+import { FEATURED_COUNT, getCars } from '~/lib/cars';
+import { path } from '~/i18n';
+import { HERO_KEY, getSetting } from '~/lib/settings';
 import { imageUrl } from '~/lib/image';
 import { formatPhotoCount, formatPrice } from '~/lib/format';
 
 const denied = await requireAdminPage(Astro);
 if (denied) return denied;
 
-const cars = await getCars(Astro.locals.runtime.env.DB);
+const db = Astro.locals.runtime.env.DB;
+const cars = await getCars(db);
+const heroKey = await getSetting(db, HERO_KEY);
+
+/**
+ * Only visible cars can be highlighted — a hidden car has no homepage to
+ * appear on, so offering it here would be a dead control.
+ *
+ * Sorted by `featured` first, not by sort_order alone. The list tells the
+ * client "the top four are your homepage", and the homepage is driven by the
+ * featured flag — so if a flagged car sat below the line, or an unflagged one
+ * above it, the page would be stating something false until the next save.
+ * Floating the flagged cars up keeps the boundary honest on first load.
+ */
+const selectable = cars
+  .filter((car) => car.visible)
+  .sort((a, b) => Number(b.featured) - Number(a.featured) || a.order - b.order);
 
 const MESSAGES: Record<string, string> = {
   sacuvano: 'Vozilo je sačuvano.',
   obrisano: 'Vozilo je obrisano.',
+  naslovna: 'Naslovna stranica je ažurirana.',
 };
 const done = MESSAGES[Astro.url.searchParams.get('gotovo') ?? ''] ?? '';
 ---
@@ -30,6 +49,87 @@ const done = MESSAGES[Astro.url.searchParams.get('gotovo') ?? ''] ?? '';
   <div class="actions" style="margin-top:0">
     <a class="btn btn--primary" href="/admin/cars/new">+ Novo vozilo</a>
   </div>
+
+  <h2>Pozadinska slika</h2>
+
+  <div class="card">
+    <p class="hint" style="margin:0 0 1rem">
+      Velika zamućena slika na vrhu naslovne stranice. Čuva se odvojeno od
+      vozila — <strong>ostaje i ako obrišete vozilo</strong>.
+    </p>
+
+    {heroKey ? (
+      <img
+        class="cover"
+        src={imageUrl(heroKey, { width: 960, height: 540 })}
+        alt=""
+        width="420"
+        height="236"
+        style="margin-bottom:1rem"
+      />
+    ) : (
+      <p class="hint" style="margin:0 0 1rem">
+        Trenutno se koristi slika istaknutog vozila. Postavite svoju da bude
+        trajna.
+      </p>
+    )}
+
+    <label class="drop" id="hero-drop" for="hero-picker">
+      <input id="hero-picker" type="file" accept="image/*" />
+      <strong>Odaberite sliku</strong> ili je prevucite ovdje<br />
+      <span class="hint">Najbolje široka slika, 1600×900 ili veća.</span>
+    </label>
+
+    <p class="queue" id="hero-state" style="margin-top:.75rem"></p>
+  </div>
+
+  <h2>Na naslovnoj</h2>
+
+  {selectable.length === 0 ? (
+    <p class="empty">Nema vidljivih vozila.</p>
+  ) : (
+    <form method="POST" action="/api/admin/featured" class="card">
+      <p class="hint" style="margin:0 0 1rem">
+        Prva {FEATURED_COUNT} vozila se prikazuju na naslovnoj. Prevucite ih na
+        željeno mjesto, ili koristite strelice.
+      </p>
+
+      <ol class="rank" id="rank">
+        {selectable.map((car, index) => (
+          <li class="rank__row" draggable="true" data-i={index}>
+            <input type="hidden" name="id" value={car.id} />
+
+            <span class="rank__grip" aria-hidden="true">⋮⋮</span>
+            <span class="rank__n"></span>
+
+            <img
+              class="thumb"
+              src={imageUrl(car.image, { width: 480, height: 320 })}
+              alt=""
+              width="84"
+              height="56"
+              loading="lazy"
+            />
+
+            <span class="rank__name">
+              {car.name}
+              {!car.available && <span class="tag tag--off" style="margin-left:.5rem">Izdato</span>}
+            </span>
+
+            <span class="rank__moves">
+              <button class="btn btn--sm" type="button" data-move="up" aria-label={`Pomjeri ${car.name} gore`}>↑</button>
+              <button class="btn btn--sm" type="button" data-move="down" aria-label={`Pomjeri ${car.name} dolje`}>↓</button>
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Sačuvaj redoslijed</button>
+        <a class="btn" href="/" target="_blank" rel="noopener">Pogledaj naslovnu</a>
+      </div>
+    </form>
+  )}
 
   <h2>Ponuda</h2>
 
@@ -62,14 +162,14 @@ const done = MESSAGES[Astro.url.searchParams.get('gotovo') ?? ''] ?? '';
               {!car.visible && <span class="tag tag--hidden">Skriveno</span>}
               {car.visible && car.available && <span class="tag tag--ok">Dostupno</span>}
               {car.visible && !car.available && <span class="tag tag--off">Izdato</span>}
-              {car.featured && <span class="tag">Istaknuto</span>}
+              {car.featured && <span class="tag tag--star">★ Na naslovnoj</span>}
             </div>
           </div>
         </div>
         <div class="actions" style="margin:0">
           <a class="btn btn--sm" href={`/admin/cars/${car.id}`}>Uredi</a>
           {car.visible && (
-            <a class="btn btn--sm" href={`/vozila/${car.slug}`} target="_blank" rel="noopener">
+            <a class="btn btn--sm" href={path('car', 'en', car.slug)} target="_blank" rel="noopener">
               Pogledaj
             </a>
           )}
@@ -78,3 +178,126 @@ const done = MESSAGES[Astro.url.searchParams.get('gotovo') ?? ''] ?? '';
     </div>
   ))}
 </Admin>
+
+{/*
+  Reordering. Drag-and-drop on desktop; the arrows are the touch path, since
+  HTML5 drag events do not fire on phones and the client works from one.
+
+  Both paths only move <li> nodes — the hidden `id` inputs move with them, so
+  the form posts the new order with no separate state to keep in sync.
+*/}
+<script is:inline define:vars={{ featuredCount: FEATURED_COUNT }}>
+  (() => {
+    const list = document.getElementById('rank');
+    if (!list) return;
+
+    /** Renumbers the rows and marks which ones are above the cut. */
+    const paint = () => {
+      [...list.children].forEach((row, i) => {
+        row.querySelector('.rank__n').textContent = i + 1;
+        row.classList.toggle('is-featured', i < featuredCount);
+        row.classList.toggle('is-cut', i === featuredCount - 1);
+      });
+    };
+
+    // --- arrows ---
+    list.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-move]');
+      if (!button) return;
+      const row = button.closest('.rank__row');
+      const sibling =
+        button.dataset.move === 'up' ? row.previousElementSibling : row.nextElementSibling;
+      if (!sibling) return;
+      button.dataset.move === 'up' ? list.insertBefore(row, sibling) : list.insertBefore(sibling, row);
+      paint();
+      button.focus();
+    });
+
+    // --- drag ---
+    let dragging = null;
+
+    list.addEventListener('dragstart', (event) => {
+      dragging = event.target.closest('.rank__row');
+      if (!dragging) return;
+      dragging.classList.add('is-dragging');
+      event.dataTransfer.effectAllowed = 'move';
+    });
+
+    list.addEventListener('dragend', () => {
+      dragging?.classList.remove('is-dragging');
+      dragging = null;
+      paint();
+    });
+
+    list.addEventListener('dragover', (event) => {
+      if (!dragging) return;
+      event.preventDefault();
+      const over = event.target.closest('.rank__row');
+      if (!over || over === dragging) return;
+      // Insert before or after depending on which half of the row we are on.
+      const box = over.getBoundingClientRect();
+      const after = event.clientY > box.top + box.height / 2;
+      list.insertBefore(dragging, after ? over.nextElementSibling : over);
+    });
+
+    paint();
+  })();
+</script>
+
+{/*
+  Hero upload. Same browser-side resize as the car uploader — three WebP
+  widths — but the result is stored under site/ in R2 so it is not owned by
+  any car and cannot be removed by deleting one.
+*/}
+<script is:inline define:vars={{ variants: [480, 960, 1600] }}>
+  (() => {
+    const picker = document.getElementById('hero-picker');
+    const drop = document.getElementById('hero-drop');
+    const state = document.getElementById('hero-state');
+    if (!picker || !drop || !state) return;
+
+    async function rendition(bitmap, width) {
+      const scale = Math.min(1, width / bitmap.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      return new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.82));
+    }
+
+    async function send(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      state.textContent = 'obrada…';
+      try {
+        const bitmap = await createImageBitmap(file);
+        const body = new FormData();
+        for (const width of variants) {
+          const blob = await rendition(bitmap, width);
+          if (!blob) throw new Error('resize');
+          body.set(`w${width}`, blob, `${width}.webp`);
+        }
+        bitmap.close?.();
+
+        state.textContent = 'upload…';
+        const response = await fetch('/api/admin/hero', { method: 'POST', body });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.ok) throw new Error(result.error || 'upload');
+        state.textContent = 'gotovo';
+        location.reload();
+      } catch (error) {
+        state.textContent = String(error.message || error);
+      }
+    }
+
+    picker.addEventListener('change', () => send(picker.files[0]));
+    for (const event of ['dragenter', 'dragover']) {
+      drop.addEventListener(event, (e) => { e.preventDefault(); drop.classList.add('is-over'); });
+    }
+    drop.addEventListener('dragleave', () => drop.classList.remove('is-over'));
+    drop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      drop.classList.remove('is-over');
+      send(e.dataTransfer.files[0]);
+    });
+  })();
+</script>

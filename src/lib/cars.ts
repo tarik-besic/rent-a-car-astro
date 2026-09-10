@@ -178,11 +178,39 @@ export async function getCarById(db: D1Database, id: string): Promise<Car | null
   return (await getCars(db)).find((car) => car.id === id) ?? null;
 }
 
-export async function getFeaturedCars(db: D1Database, limit = 6): Promise<Car[]> {
+/**
+ * How many cars the homepage highlights.
+ *
+ * Shared by the homepage and the /admin picker so the two can never disagree
+ * about how many slots there are.
+ */
+export const FEATURED_COUNT = 4;
+
+/**
+ * The cars the homepage highlights, in `sort_order`.
+ *
+ * When nothing is flagged this falls back to the first `limit` published cars,
+ * so the homepage is never empty on a fresh install. That fallback is also why
+ * the /admin picker reports the flagged count explicitly: without it, "nothing
+ * selected" and "these four selected" look identical on the public site.
+ */
+export async function getFeaturedCars(
+  db: D1Database,
+  limit = FEATURED_COUNT,
+): Promise<Car[]> {
   const cars = await getPublishedCars(db);
   const featured = cars.filter((car) => car.featured);
-  // Never render an empty homepage section just because nothing is flagged.
-  return (featured.length > 0 ? featured : cars).slice(0, limit);
+
+  /*
+   * Top up to `limit` with the next published cars.
+   *
+   * Flagged cars lead and keep their order; the rest only fill leftover slots.
+   * Without this, a selection of three left the homepage row one card short —
+   * which looks like a bug rather than a choice, and is easy to end up in
+   * whenever a featured car is deleted or hidden.
+   */
+  const filler = cars.filter((car) => !car.featured);
+  return [...featured, ...filler].slice(0, limit);
 }
 
 /** Same class first, then anything else, so the section is never short. */

@@ -23,13 +23,13 @@ is stored and no mail service is involved.
 
 ## What's in it
 
-| Page | Bosnian | English |
+| Page | English | Bosnian |
 | --- | --- | --- |
-| Landing | `/` | `/en` |
-| Car list (+ class filter) | `/vozila` | `/en/cars` |
-| Car detail | `/vozila/[slug]` | `/en/cars/[slug]` |
-| Reservation | `/rezervacija` | `/en/reservation` |
-| FAQ | `/faq` | `/en/faq` |
+| Landing | `/` | `/bs` |
+| Car list (+ class filter) | `/cars` | `/bs/vozila` |
+| Car detail | `/cars/[slug]` | `/bs/vozila/[slug]` |
+| Reservation | `/reservation` | `/bs/rezervacija` |
+| FAQ | `/faq` | `/bs/faq` |
 
 Plus `/sitemap.xml`, `/robots.txt`, `/healthz` (config diagnostics) and
 `/img/*` (photos streamed out of R2).

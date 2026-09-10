@@ -1,10 +1,8 @@
 ---
-import Icon from './Icon.astro';
 import type { Car } from '~/lib/cars';
 import { resolveImage } from '~/lib/image';
 import { formatPrice } from '~/lib/format';
 import { path, t, type Locale } from '~/i18n';
-import { carWhatsappLink } from '~/lib/whatsapp';
 
 interface Props {
   car: Car;
@@ -18,7 +16,9 @@ const d = t(locale);
 const href = path('car', locale, car.slug);
 const title = car.year ? `${car.name} ${car.year}` : car.name;
 
-const image = resolveImage(car.image, { width: 640, height: 400 });
+// 4:3 — what phones and the original listing photos actually are, so the
+// crop stops slicing the roof and wheels off.
+const image = resolveImage(car.image, { width: 640, height: 480 });
 
 // "COMPACT · AUTOMATIC · DIESEL · 5 SEATS" — the mono spec line of 2b.
 const meta = [
@@ -68,32 +68,17 @@ const meta = [
       </p>
     )}
 
+    {/*
+      One neutral action per card.
+      "Ask on WhatsApp" used to sit on every card, so the green CTA repeated
+      once per car down the whole grid and stopped reading as the primary
+      action anywhere. WhatsApp is still one tap away — on the car's own page,
+      in the hero, and in the floating button that follows the page.
+    */}
     <div class="card__actions">
-      {car.available ? (
-        <>
-          <a
-            class="btn btn--wa"
-            href={carWhatsappLink(locale, car.name)}
-            target="_blank"
-            rel="noopener"
-            data-wa="card"
-          >
-            <Icon name="whatsapp" size={16} />
-            {d.common.askWhatsapp}
-          </a>
-          <a class="btn btn--ghost" href={href}>{d.common.details}</a>
-        </>
-      ) : (
-        <a
-          class="btn btn--muted"
-          href={carWhatsappLink(locale, car.name)}
-          target="_blank"
-          rel="noopener"
-          data-wa="card-out"
-        >
-          {d.common.askOtherDates}
-        </a>
-      )}
+      <a class="btn btn--ghost btn--block" href={href}>
+        {car.available ? d.common.details : d.common.askOtherDates}
+      </a>
     </div>
   </div>
 </article>

@@ -93,7 +93,7 @@ export const bs = {
     quickSubmit: 'Pošalji datume na WhatsApp',
     quickNote: 'Poruka je već napisana — vi samo pošaljete. Ništa se ne čuva na stranici.',
     heroImageAlt: `Vozilo iz flote ${brand} — rent a car ${city}`,
-    fleetHeading: 'Naša flota',
+    fleetHeading: 'Naša vozila',
     fleetAll: (n: number) => `Pogledaj sva vozila (${n})`,
     fleetAllShort: (n: number) => `Sva (${n})`,
     ctaHeading: 'Sve se dogovara u razgovoru.',
@@ -104,7 +104,7 @@ export const bs = {
   cars: {
     title: `Vozila u ponudi | Rent a car ${city}`,
     description: `Ponuda vozila za najam u ${cityLoc} s cijenama po danu — ekonomična vozila, limuzine, kombi i SUV. Rezervacija na WhatsApp u par minuta.`,
-    h1: 'Naša flota',
+    h1: 'Naša vozila',
     sub: 'cijene po danu, niže od 3 i 7 dana',
     empty: 'Trenutno nema objavljenih vozila. Kontaktirajte nas na WhatsApp za trenutnu dostupnost.',
     countLabel: (n: number) => (n === 1 ? '1 vozilo' : `${n} vozila`),
@@ -180,7 +180,7 @@ export const bs = {
       },
       {
         q: 'Koliko iznosi depozit?',
-        a: `Depozit zavisi od klase vozila i najčešće se kreće od 100 do 300 ${site.currency.symbol}. Depozit se vraća u cijelosti pri vraćanju vozila u istom stanju. Za dio vozila depozit nije potreban — pitajte nas na WhatsApp.`,
+        a: 'Depozit zavisi od klase vozila. Tačan iznos vam potvrdimo na WhatsApp kada znamo koje vozilo i koji termin vas zanima. Depozit se vraća u cijelosti pri vraćanju vozila u istom stanju.',
       },
       {
         q: 'Koja je minimalna starost vozača?',
@@ -204,11 +204,7 @@ export const bs = {
       },
       {
         q: 'Kako se plaća najam?',
-        a: 'Plaćanje je moguće gotovinom ili karticom pri preuzimanju vozila. Za pravna lica izdajemo fakturu s odgodom plaćanja.',
-      },
-      {
-        q: 'Šta ako se vozilo pokvari tokom najma?',
-        a: 'Odmah nas kontaktirajte na WhatsApp ili telefon. Organizujemo pomoć na putu, a u slučaju duže neispravnosti dobijate zamjensko vozilo bez dodatnog troška.',
+        a: `Plaćanje je gotovinom u ${site.currency.code}-u pri preuzimanju vozila. Za pravna lica izdajemo fakturu s odgodom plaćanja.`,
       },
       {
         q: 'Koliko unaprijed treba rezervisati vozilo?',

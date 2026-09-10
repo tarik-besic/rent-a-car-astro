@@ -92,7 +92,7 @@ export const en: Dict = {
     quickSubmit: 'Send these dates on WhatsApp',
     quickNote: 'The message is written for you — you only press send. Nothing is stored on this site.',
     heroImageAlt: `A car from the ${brand} rental fleet in ${city}`,
-    fleetHeading: 'The fleet',
+    fleetHeading: 'Our cars',
     fleetAll: (n: number) => `See all ${n} cars`,
     fleetAllShort: (n: number) => `All ${n}`,
     ctaHeading: 'Everything is arranged in chat.',
@@ -103,7 +103,7 @@ export const en: Dict = {
   cars: {
     title: `Available cars | Rent a car ${city}`,
     description: `The rental fleet in ${city} with daily prices — economy cars, sedans, vans and SUVs. Book over WhatsApp in a couple of minutes.`,
-    h1: 'The fleet',
+    h1: 'Our cars',
     sub: 'prices per day, cheaper from 3 and 7 days',
     empty: 'No cars are published right now. Message us on WhatsApp for current availability.',
     countLabel: (n: number) => (n === 1 ? '1 car' : `${n} cars`),
@@ -179,7 +179,7 @@ export const en: Dict = {
       },
       {
         q: 'How much is the deposit?',
-        a: `The deposit depends on the car class and is usually between 100 and 300 ${site.currency.symbol}. It is refunded in full when the car is returned in the same condition. Some cars require no deposit at all — ask us on WhatsApp.`,
+        a: 'The deposit depends on the class of car. We confirm the exact amount on WhatsApp once we know which car and which dates you need. It is refunded in full when the car is returned in the same condition.',
       },
       {
         q: 'What is the minimum driver age?',
@@ -203,11 +203,7 @@ export const en: Dict = {
       },
       {
         q: 'How can I pay?',
-        a: 'Cash or card on pick-up. For companies we issue an invoice with deferred payment.',
-      },
-      {
-        q: 'What happens if the car breaks down?',
-        a: 'Contact us immediately on WhatsApp or by phone. We arrange roadside assistance and, if the car cannot be repaired quickly, a replacement car at no extra cost.',
+        a: `Cash in ${site.currency.code} on pick-up. For companies we issue an invoice with deferred payment.`,
       },
       {
         q: 'How far in advance should I book?',

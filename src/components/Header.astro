@@ -32,13 +32,28 @@ const slug = routeKey === 'car' ? Astro.url.pathname.split('/').filter(Boolean).
     <a class="brand" href={path('home', locale)}>{site.name}</a>
 
     <div class="header__right">
-      <nav class="nav" aria-label={d.nav.mainLabel}>
-        {items.map((item) => (
-          <a href={item.href} aria-current={item.key === routeKey ? 'page' : undefined}>
-            {item.label}
-          </a>
-        ))}
-      </nav>
+      {/*
+        <details> as the mobile disclosure, so the menu opens with no
+        JavaScript at all. Below 900px the summary is the burger and the nav
+        becomes a dropdown; above it the summary is hidden and CSS keeps the
+        nav visible regardless of open state, so it reads as a plain row.
+
+        Previously there was no burger and .nav was simply display:none on
+        mobile, which left Cars, FAQ and Contact unreachable on a phone.
+      */}
+      <details class="menu">
+        <summary aria-label={d.nav.mainLabel}>
+          <Icon name="menu" size={20} />
+        </summary>
+
+        <nav class="nav" aria-label={d.nav.mainLabel}>
+          {items.map((item) => (
+            <a href={item.href} aria-current={item.key === routeKey ? 'page' : undefined}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </details>
 
       <span class="lang">
         {LOCALES.map((code, index) => (

@@ -287,6 +287,20 @@ p:last-child { margin-bottom: 0; }
   .grid--cars { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
+/*
+ * Homepage highlight row. Scoped modifier so the 4-up count cannot disturb
+ * the fleet listing or the related-cars strip, which both want 3 across.
+ *
+ * 2x2 from 640px, then 4 across once there is room for a readable card.
+ */
+@media (min-width: 640px) {
+  .grid--cars.grid--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1100px) {
+  .grid--cars.grid--compact { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
 /* ------------------------------------------------------------------ *
  * Buttons
  * Green is WhatsApp only. Ghost is an ink outline, as in 1d / 2b.
@@ -334,6 +348,23 @@ p:last-child { margin-bottom: 0; }
 .btn--ghost:hover {
   background: var(--ink);
   color: var(--on-ink);
+}
+
+/*
+ * The ghost button is ink-coloured, which is invisible on the ink hero and
+ * footer. Invert it on those grounds.
+ */
+.hero .btn--ghost,
+.footer .btn--ghost {
+  border-color: rgb(247 245 241 / 0.45);
+  color: var(--on-ink);
+}
+
+.hero .btn--ghost:hover,
+.footer .btn--ghost:hover {
+  background: var(--on-ink);
+  border-color: var(--on-ink);
+  color: var(--ink);
 }
 
 /* "Ask about other dates" on a rented car — grey outline. */
@@ -453,13 +484,30 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
 /* ------------------------------------------------------------------ *
  * Header — ink band, sticky (2a / 2b)
  * ------------------------------------------------------------------ */
+/*
+ * Default: solid ink, sticky. Always legible, on any page ground.
+ */
 .header {
   position: sticky;
   top: 0;
   z-index: 50;
   background: var(--ink);
   color: var(--on-ink);
-  border-bottom: 1px solid var(--line-ink);
+}
+
+/*
+ * Over a hero, the bar goes transparent so the blurred photo runs to the very
+ * top of the page. Scoped with :has() to a header immediately followed by a
+ * main whose first child is the hero — i.e. the homepage only.
+ *
+ * Deliberately a progressive enhancement: a browser without :has() keeps the
+ * solid bar above, which is the readable outcome. The reverse default would
+ * put pale text on paper on every inner page.
+ */
+.header:has(+ main > .hero:first-child) {
+  position: absolute;
+  inset-inline: 0;
+  background: transparent;
 }
 
 .header__inner {
@@ -484,6 +532,14 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
   align-items: center;
   gap: 1.875rem;
 }
+
+.menu > summary {
+  display: none;
+  list-style: none;
+  cursor: pointer;
+}
+
+.menu > summary::-webkit-details-marker { display: none; }
 
 .nav {
   display: flex;
@@ -529,7 +585,54 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
   .header__inner { padding-block: 1rem; }
   .brand { font-size: 0.8125rem; }
   .header__right { gap: 0.75rem; }
-  .nav { display: none; }
+  /* Burger + dropdown. The nav is only hidden while the disclosure is
+     closed, so the links stay reachable on a phone. */
+  .menu { position: relative; }
+
+  .menu > summary {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgb(247 245 241 / 0.28);
+    border-radius: var(--radius-sm);
+    color: var(--on-ink);
+  }
+
+  .menu[open] > summary { background: rgb(247 245 241 / 0.12); }
+
+  .menu:not([open]) > .nav { display: none; }
+
+  .menu > .nav {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    z-index: 60;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    min-width: 168px;
+    padding: 0.3rem;
+    background: var(--ink);
+    border: 1px solid rgb(247 245 241 / 0.16);
+    border-radius: var(--radius);
+    box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
+  }
+
+  .menu > .nav a {
+    /* Reset the desktop row's vertical padding and border, or each item ends
+       up ~90px tall in the dropdown. */
+    padding: 0.6rem 0.7rem;
+    border-bottom: 0;
+    line-height: 1.25;
+    border-radius: var(--radius-sm);
+  }
+
+  .menu > .nav a:hover { background: rgb(247 245 241 / 0.1); }
+
+  /* One "or call" is enough — the quick form below carries its own. */
+  .hero__call { display: none; }
+
 
   /* 2a: "BS EN", the current one underlined. */
   .lang { gap: 0.625rem; font-family: var(--font); font-size: 0.6875rem; font-weight: 600; }
@@ -552,9 +655,90 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
  * Hero — ink band, oversized type block (2a / 2b)
  * ------------------------------------------------------------------ */
 .hero {
+  position: relative;
+  /* Own stacking context so the backdrop can sit behind the content without
+     escaping to z-index -1 on the page. */
+  isolation: isolate;
+  overflow: hidden;
   background: var(--ink);
   color: var(--on-ink);
-  padding-block: clamp(0.5rem, 5vw, 4.75rem) clamp(1.5rem, 4vw, 3.75rem);
+  /* Extra top padding clears the transparent header overlaid on top of it. */
+  padding-block: calc(var(--header-h) + clamp(1.75rem, 5vw, 3.25rem))
+    clamp(2.75rem, 7vw, 4.75rem);
+}
+
+/* ---- Blurred hero backdrop --------------------------------------- *
+ * A defocused car photo out of R2. Gives the fold depth and colour without
+ * a large sharp image competing with the headline.
+ */
+.hero__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.hero__backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* scale() past the edges: a blur samples outside the element and would
+     otherwise fade to transparent at the borders. */
+  /* Pushed back again: at 16px blur the photo read as a badly-scaled image
+     rather than atmosphere. More blur plus lower opacity over a darker scrim
+     makes it colour and depth instead of a picture competing with the type. */
+  transform: scale(1.06);
+  filter: blur(18px) saturate(1.2);
+  opacity: 1;
+}
+
+/* Scrim: keeps text contrast well clear of AA regardless of the photo. */
+.hero__backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /*
+   * A grey veil rather than a black one: it mutes the photo without crushing
+   * it to near-black, so the image still reads as an image. Warm grey to match
+   * the ink palette, weighted darker on the left where the headline sits —
+   * text contrast is the constraint, so the gradient does that work instead
+   * of a flat higher opacity.
+   */
+  background: linear-gradient(
+    100deg,
+    rgb(28 26 24 / 0.9) 0%,
+    rgb(44 41 38 / 0.78) 30%,
+    rgb(74 70 65 / 0.5) 65%,
+    rgb(96 91 85 / 0.38) 100%
+  );
+}
+
+/*
+ * Phone: deepen the veil.
+ *
+ * The hero copy sits over the brightest part of the photo on a narrow screen
+ * and measured 3.29:1 there, under the 4.5:1 AA floor for body text. Desktop
+ * keeps the lighter, more visible treatment — this only trades image
+ * visibility for legibility where the two actually conflict.
+ *
+ * Placed AFTER the desktop rule on purpose: same specificity, so source order
+ * decides. Inside an earlier media block it silently lost and never applied.
+ */
+@media (max-width: 899px) {
+  .hero__backdrop::after {
+    background: linear-gradient(
+      170deg,
+      rgb(22 20 18 / 0.84) 0%,
+      rgb(34 31 28 / 0.78) 50%,
+      rgb(52 48 44 / 0.7) 100%
+    );
+  }
+}
+
+/* A blurred photo carries no information, so drop it when the user has asked
+   for less motion/effect or is on a slow connection surrogate. */
+@media (prefers-reduced-transparency: reduce) {
+  .hero__backdrop { display: none; }
 }
 
 .hero__grid {
@@ -594,7 +778,10 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
   max-width: 520px;
   font-size: 1.1875rem;
   line-height: 1.5;
-  color: rgb(247 245 241 / 0.7);
+  /* Was 0.7. Over the lightened backdrop that measured 3.49:1 on mobile,
+     under the 4.5:1 AA floor for body text. Brightening the type fixes it
+     without darkening the veil and undoing the visible photo. */
+  color: rgb(247 245 241 / 0.94);
 }
 
 .hero__actions {
@@ -615,30 +802,14 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
 .hero__call a:hover { color: var(--on-ink); }
 
 /* Four photo tiles under the hero (2b); three small ones in 2a. */
-.hero__strip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.875rem;
-  margin-top: clamp(1.25rem, 5vw, 4rem);
-}
-
-.hero__strip figure {
-  margin: 0;
-  height: 190px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--hatch-ink);
-}
-
-.hero__strip img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 
 @media (max-width: 899px) {
   .hero__eyebrow,
-  .hero__actions { display: none; }
+  /* The quick form below carries its own WhatsApp submit, so the duplicate
+     CTA goes — but the row itself stays, or "Browse cars" would be
+     unreachable on a phone. */
+  .hero__actions { flex-direction: column; align-items: stretch; }
+  .hero__actions .btn--wa { display: none; }
 
   .hero__title {
     margin-top: 2.5rem;
@@ -653,13 +824,7 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
     font-size: 0.9375rem;
   }
 
-  .hero__strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
-  }
 
-  .hero__strip figure { height: 64px; border-radius: 8px; }
-  .hero__strip figure:nth-child(n + 4) { display: none; }
 }
 
 /* ---- Quick enquiry card in the hero (2a / 2b) --------------------- *
@@ -754,7 +919,10 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
 
 .card__media img {
   width: 100%;
-  height: 170px;
+  /* Was a fixed 170px, which squashed the 4:3 source photos into a letterbox.
+     An aspect ratio grows with the column, so cars get real height. */
+  aspect-ratio: 4 / 3;
+  height: auto;
   object-fit: cover;
 }
 
@@ -833,7 +1001,7 @@ a.pill:not(.pill--in):hover { border-color: var(--ink); }
   }
 
   .grid--compact .card { border-radius: 10px; }
-  .grid--compact .card__media img { height: 76px; }
+  .grid--compact .card__media img { aspect-ratio: 3 / 2; }
   .grid--compact .badge { left: 0.375rem; top: 0.375rem; font-size: 0.5rem; padding: 0.25rem 0.375rem; }
   .grid--compact .card__body { padding: 0.5625rem; gap: 0.25rem; }
   .grid--compact .card__head { flex-direction: column; gap: 0.125rem; }

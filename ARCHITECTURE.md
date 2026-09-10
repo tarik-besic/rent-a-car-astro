@@ -21,15 +21,15 @@ read path, no image CDN round-trip, and no cache to invalidate.
 
 ## 2. Request → response, end to end
 
-A request for `/vozila/volkswagen-golf-8`:
+A request for `/cars/volkswagen-golf-8`:
 
 1. Cloudflare checks static assets first. `_routes.json` excludes `/_astro/*`
    and the favicons, so those never wake the Worker.
 2. The Worker boots (or reuses a warm isolate) and Astro routes the URL to
-   `src/pages/vozila/[slug].astro`.
+   `src/pages/cars/[slug].astro`.
 3. That page is four lines: read the D1 binding off `Astro.locals.runtime.env`,
    call `getCar(db, slug)`, and render either `CarDetail` or `NotFound` with
-   `locale="bs"`. Its English twin at `src/pages/en/cars/[slug].astro` is
+   `locale="en"`. Its Bosnian twin at `src/pages/bs/vozila/[slug].astro` is
    identical but for the locale.
 4. `getCar` runs two queries in one D1 `batch` — cars and photos — and joins
    them in memory into the `Car` objects the views render.
@@ -208,7 +208,7 @@ changes the origin.
 `LocalBusiness` for the business, `Product` + per-day `Offer` for a car,
 `ItemList` for the listing, `BreadcrumbList` and `FAQPage`.
 
-Locales use translated paths (`/vozila` vs `/en/cars`), not a query parameter,
+Locales use translated paths (`/cars` vs `/bs/vozila`), not a query parameter,
 because that is what lets the two language versions rank independently. The
 route table and `hreflang` cluster are generated from `ROUTES` in
 `src/i18n/index.ts`, so adding a language means adding a dictionary and routes,

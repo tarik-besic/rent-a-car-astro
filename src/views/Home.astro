@@ -5,7 +5,8 @@ import CtaBand from '~/components/CtaBand.astro';
 import Icon from '~/components/Icon.astro';
 import { site } from '~/config/site';
 import { path, t, type Locale } from '~/i18n';
-import { getFeaturedCars, getPublishedCars, getStartingPrice } from '~/lib/cars';
+import { FEATURED_COUNT, getFeaturedCars, getPublishedCars, getStartingPrice } from '~/lib/cars';
+import { HERO_KEY, getSetting } from '~/lib/settings';
 import { PLACEHOLDER, resolveImage } from '~/lib/image';
 import { formatPrice } from '~/lib/format';
 import { genericWhatsappLink } from '~/lib/whatsapp';
@@ -18,10 +19,11 @@ const { locale } = Astro.props;
 const d = t(locale);
 
 const db = Astro.locals.runtime.env.DB;
-const [featured, allCars, startingPrice] = await Promise.all([
-  getFeaturedCars(db, 3),
+const [featured, allCars, startingPrice, heroKey] = await Promise.all([
+  getFeaturedCars(db, FEATURED_COUNT),
   getPublishedCars(db),
   getStartingPrice(db),
+  getSetting(db, HERO_KEY),
 ]);
 
 const priceLabel = startingPrice !== null ? formatPrice(startingPrice, locale) : '';
@@ -29,22 +31,34 @@ const priceLabel = startingPrice !== null ? formatPrice(startingPrice, locale) :
 const title = d.home.title.replace('{price}', startingPrice !== null ? String(startingPrice) : '');
 
 /**
- * Photo strip under the hero (2b runs four, 2a three). An explicit
- * PUBLIC_HERO_IMAGE leads; real car photos fill the rest. Slots without a
- * photo keep the hatch ground, as in the mockup.
+ * Blurred backdrop for the hero.
+ *
+ * Replaces a full-width showcase photo that dominated the fold. As a
+ * defocused, darkened layer the same picture gives the hero depth and colour
+ * without competing with the headline — and because it is blurred, the small
+ * 960px rendition is plenty, so it costs less to load than the sharp version
+ * did.
+ *
+ * Resolution order:
+ *   1. PUBLIC_HERO_IMAGE   — explicit editorial override
+ *   2. the stored site hero — uploaded at /admin, lives under site/ in R2 and
+ *                             survives deleting any car
+ *   3. a featured car photo — convenience fallback so a fresh install is not
+ *                             blank; this one CAN disappear with its car
  */
-const STRIP = 4;
-const photoCars = allCars.filter((car) => car.image && car.image !== PLACEHOLDER);
-const stripSources = [site.heroImage, ...photoCars.map((car) => car.image)].filter(Boolean).slice(0, STRIP);
-const strip = Array.from({ length: STRIP }, (_, index) => {
-  const source = stripSources[index];
-  if (!source) return null;
-  const car = photoCars.find((item) => item.image === source);
-  return {
-    image: resolveImage(source, { width: 800, height: 600 }),
-    alt: car ? d.common.carImageAlt(car.name) : d.home.heroImageAlt,
-  };
-});
+const backdropCar =
+  featured.find((car) => car.images.length > 1) ??
+  featured.find((car) => car.image && car.image !== PLACEHOLDER) ??
+  null;
+
+// images[1] keeps the cover photo free for the car's own card.
+const backdropSource =
+  site.heroImage || heroKey || backdropCar?.images[1] || backdropCar?.image || '';
+
+const backdrop = backdropSource
+  ? resolveImage(backdropSource, { width: 960, height: 540 })
+  : null;
+
 ---
 
 <Base
@@ -55,6 +69,12 @@ const strip = Array.from({ length: STRIP }, (_, index) => {
   ogType="website"
 >
   <section class="hero">
+    {backdrop && (
+      <div class="hero__backdrop" aria-hidden="true">
+        <img src={backdrop.src} alt="" width={backdrop.width} height={backdrop.height} fetchpriority="high" decoding="sync" />
+      </div>
+    )}
+
     <div class="container">
       <div class="hero__grid">
         <div>
@@ -77,9 +97,12 @@ const strip = Array.from({ length: STRIP }, (_, index) => {
             >
               {d.home.heroCta}
             </a>
+            <a class="btn btn--ghost btn--xl" href={path('cars', locale)}>
+              {d.common.viewCars}
+              <span aria-hidden="true">→</span>
+            </a>
             <p class="hero__call">
-              <a href={`tel:${site.phone}`}>{d.home.orCall(site.phoneDisplay)}</a><br />
-              {d.common.hoursShort}
+              <a href={`tel:${site.phone}`}>{d.home.orCall(site.phoneDisplay)}</a>
             </p>
           </div>
         </div>
@@ -120,25 +143,6 @@ const strip = Array.from({ length: STRIP }, (_, index) => {
             <a href={`tel:${site.phone}`}>{d.home.orCall(site.phoneDisplay)}</a>
           </p>
         </form>
-      </div>
-
-      <div class="hero__strip">
-        {strip.map((slot, index) => (
-          <figure>
-            {slot && (
-              <img
-                src={slot.image.src}
-                srcset={slot.image.srcset || undefined}
-                sizes="(max-width: 640px) 33vw, 25vw"
-                width={slot.image.width}
-                height={slot.image.height}
-                alt={slot.alt}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                decoding="async"
-              />
-            )}
-          </figure>
-        ))}
       </div>
     </div>
   </section>

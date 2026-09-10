@@ -3,6 +3,7 @@ import Admin from '~/layouts/Admin.astro';
 import CarForm from '~/components/admin/CarForm.astro';
 import { requireAdminPage } from '~/lib/admin-auth';
 import { getCarById } from '~/lib/cars';
+import { path } from '~/i18n';
 import { parseCarForm, updateCar } from '~/lib/car-write';
 import { listPhotos } from '~/lib/photos';
 import { imageUrl } from '~/lib/image';
@@ -39,7 +40,7 @@ const isNew = Astro.url.searchParams.get('novo') === '1';
   <h1>{car.name}</h1>
   <p class="lead">
     {car.visible ? (
-      <a href={`/vozila/${car.slug}`} target="_blank" rel="noopener">/vozila/{car.slug}</a>
+      <a href={path('car', 'en', car.slug)} target="_blank" rel="noopener">{path('car', 'en', car.slug)}</a>
     ) : (
       'Trenutno skriveno sa stranice.'
     )}
