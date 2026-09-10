@@ -3,7 +3,6 @@ import Base from '~/layouts/Base.astro';
 import CarCard from '~/components/CarCard.astro';
 import Icon from '~/components/Icon.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
-import { site } from '~/config/site';
 import { abs, path, t, type Locale } from '~/i18n';
 import { getRelatedCars, type Car } from '~/lib/cars';
 import { imageUrl, resolveImage } from '~/lib/image';
@@ -28,23 +27,50 @@ const thumbs = gallery.slice(0, 6).map((source) => ({
   thumb: resolveImage(source, { width: 240, height: 160 }),
 }));
 
-const priceText = car.pricePerDay !== null ? formatPrice(car.pricePerDay, locale) : '';
 const title = d.car.titleTemplate(car.name);
 const description =
   car.description[locale] && car.description[locale].length > 60
     ? truncate(car.description[locale], 165)
     : d.car.descriptionTemplate(car.name, car.pricePerDay !== null ? String(car.pricePerDay) : '');
 
+// "COMPACT · AVAILABLE" — the eyebrow above the name in 1e.
+const eyebrow = [car.category, car.available ? d.common.available : d.common.unavailable]
+  .filter(Boolean)
+  .join(' · ');
+
+/**
+ * Tiered price table (1e): one row per rate the car has, labelled with the
+ * day range it applies to. The cheapest, longest tier is highlighted.
+ */
+const rates: { label: string; value: number }[] = [];
+if (car.pricePerDay !== null) {
+  const firstEnd = car.price3Day !== null ? 2 : car.price7Day !== null ? 6 : null;
+  rates.push({
+    label: firstEnd === null ? d.car.pricingDay : d.car.tier(1, firstEnd),
+    value: car.pricePerDay,
+  });
+  if (car.price3Day !== null) {
+    rates.push({ label: d.car.tier(3, car.price7Day !== null ? 6 : null), value: car.price3Day });
+  }
+  if (car.price7Day !== null) rates.push({ label: d.car.tier(7, null), value: car.price7Day });
+}
+
+const seatsDoors = [car.seats, car.doors].filter((value) => value !== null).join(' / ');
 const specs = [
-  car.year && { icon: 'calendar', label: d.common.specs.year, value: String(car.year) },
-  car.transmission && { icon: 'gear', label: d.common.specs.transmission, value: d.common.values[car.transmission] },
-  car.fuel && { icon: 'fuel', label: d.common.specs.fuel, value: d.common.values[car.fuel] },
-  car.seats && { icon: 'users', label: d.common.specs.seats, value: String(car.seats) },
-  car.doors && { icon: 'door', label: d.common.specs.doors, value: String(car.doors) },
-  car.category && { icon: 'tag', label: d.common.specs.category, value: car.category },
-  { icon: 'snow', label: d.common.specs.ac, value: car.ac ? d.common.values.yes : d.common.values.no },
-  car.consumption && { icon: 'bolt', label: d.common.specs.consumption, value: car.consumption },
-].filter(Boolean) as { icon: 'calendar'; label: string; value: string }[];
+  car.transmission && { label: d.common.specs.transmission, value: d.common.values[car.transmission] },
+  car.fuel && { label: d.common.specs.fuel, value: d.common.values[car.fuel] },
+  seatsDoors && {
+    label: car.seats !== null && car.doors !== null ? d.common.specs.seatsDoors : car.seats !== null ? d.common.specs.seats : d.common.specs.doors,
+    value: seatsDoors,
+  },
+  car.consumption && { label: d.common.specs.consumption, value: car.consumption },
+].filter(Boolean) as { label: string; value: string }[];
+
+// Air conditioning reads as a feature chip in 1e, not a spec cell.
+const features =
+  car.ac && !car.features.some((feature) => /klima|air.?con|a\/c/i.test(feature))
+    ? [d.common.specs.ac, ...car.features]
+    : car.features;
 
 const ogImage = gallery[0] ? imageUrl(gallery[0], { width: 1200, height: 630 }) : undefined;
 
@@ -74,7 +100,7 @@ const reserveHref = `${path('reserve', locale)}?car=${encodeURIComponent(car.slu
   ogImage={ogImage?.startsWith('http') ? ogImage : undefined}
   schema={schema}
 >
-  <section class="section">
+  <section class="section section--page">
     <div class="container">
       <Breadcrumbs
         items={[
@@ -84,15 +110,19 @@ const reserveHref = `${path('reserve', locale)}?car=${encodeURIComponent(car.slu
         ]}
       />
 
+      {/*
+        On a phone both columns dissolve (display: contents) and the blocks
+        run in the 1e order: gallery, name, prices, specs, sticky CTA.
+      */}
       <div class="detail">
-        <div>
+        <div class="detail__main">
           <div class="gallery" aria-label={d.car.galleryLabel}>
             <div class="gallery__main">
               <img
                 id="gallery-main"
                 src={main.src}
                 srcset={main.srcset || undefined}
-                sizes="(max-width: 960px) 100vw, 700px"
+                sizes="(max-width: 960px) 100vw, 800px"
                 width={main.width}
                 height={main.height}
                 alt={car.name}
@@ -125,98 +155,70 @@ const reserveHref = `${path('reserve', locale)}?car=${encodeURIComponent(car.slu
             )}
           </div>
 
-          <h1 style="margin-top:1.75rem">{car.name}</h1>
-
-          {car.description[locale] && <p class="lead">{car.description[locale]}</p>}
-
-          <h2 style="margin-top:2.25rem">{d.car.specsHeading}</h2>
-          <ul class="specs">
-            {specs.map((spec) => (
-              <li>
-                <span class="k">{spec.label}</span>
-                <div class="v">{spec.value}</div>
-              </li>
-            ))}
-          </ul>
-
-          {car.features.length > 0 && (
-            <>
-              <h2 style="margin-top:2.25rem">{d.car.featuresHeading}</h2>
-              <ul class="chips">
-                {car.features.map((feature) => (
-                  <li class="pill"><Icon name="check" size={13} />{feature}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-
-        <aside class="detail__aside">
-          <div class="price-box">
-            {car.pricePerDay !== null ? (
+          <div class="detail__specs">
+            {specs.length > 0 && (
               <>
-                <div class="price-box__main">
-                  <b>{priceText}</b>
-                  <span class="muted">/ {d.common.perDay}</span>
-                </div>
-                <p class="muted" style="margin:0;font-size:.88rem">{d.car.pricingNote}</p>
-
-                {(car.price3Day !== null || car.price7Day !== null || car.deposit !== null) && (
-                  <div class="price-box__tiers">
-                    {car.price3Day !== null && (
-                      <div><span>{d.car.pricing3}</span><b>{formatPrice(car.price3Day, locale)}</b></div>
-                    )}
-                    {car.price7Day !== null && (
-                      <div><span>{d.car.pricing7}</span><b>{formatPrice(car.price7Day, locale)}</b></div>
-                    )}
-                    {car.deposit !== null && (
-                      <div>
-                        <span>{d.common.deposit}</span>
-                        <b>{car.deposit === 0 ? d.common.noDeposit : formatPrice(car.deposit, locale)}</b>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <h2 class="eyebrow">{d.car.specsHeading}</h2>
+                <ul class="specs">
+                  {specs.map((spec) => (
+                    <li>
+                      <span class="k">{spec.label}</span>
+                      <span class="v">{spec.value}</span>
+                    </li>
+                  ))}
+                </ul>
               </>
-            ) : (
-              <p style="margin:0 0 1rem"><b>{d.common.whatsappCta}</b></p>
             )}
 
-            <span class={`pill ${car.available ? 'pill--in' : 'pill--out'}`} style="margin-bottom:1rem">
-              {car.available ? d.common.available : d.common.unavailable}
-            </span>
-
-            <div class="stack" style="margin-top:1rem">
-              <a
-                class="btn btn--wa btn--lg btn--block"
-                href={carWhatsappLink(locale, car.name)}
-                target="_blank"
-                rel="noopener"
-                data-wa="detail"
-              >
-                <Icon name="whatsapp" size={22} />
-                {d.common.whatsappCta}
-              </a>
-              <a class="btn btn--ghost btn--block" href={reserveHref}>
-                <Icon name="calendar" size={18} />
-                {d.nav.reserve}
-              </a>
-              <a class="btn btn--ghost btn--block" href={`tel:${site.phone}`}>
-                <Icon name="phone" size={18} />
-                {site.phoneDisplay}
-              </a>
-            </div>
-
-            <h3 style="margin:1.6rem 0 .4rem;font-size:.82rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim)">
-              {d.car.includedHeading}
-            </h3>
-            <ul class="included">
-              {d.car.included.map((item) => (
-                <li><Icon name="check" size={15} />{item}</li>
-              ))}
-            </ul>
+            {features.length > 0 && (
+              <ul class="chips chips--features">
+                {features.map((feature) => <li class="pill">{feature}</li>)}
+              </ul>
+            )}
           </div>
-        </aside>
+        </div>
+
+        <div class="detail__aside">
+          <div class="detail__head">
+            {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+            <h1 class="detail__title">
+              <span>{car.name}</span>
+              {car.year && <span>{car.year}</span>}
+            </h1>
+            {car.description[locale] && <p class="detail__desc">{car.description[locale]}</p>}
+          </div>
+
+          {(rates.length > 0 || car.deposit !== null) && (
+            <div class="rates">
+              {rates.map((rate, index) => (
+                <div class={rates.length > 1 && index === rates.length - 1 ? 'is-best' : index % 2 ? 'is-alt' : undefined}>
+                  <span>{rate.label}</span>
+                  <b>{formatPrice(rate.value, locale)}</b>
+                </div>
+              ))}
+              {car.deposit !== null && (
+                <div class="rates__deposit">
+                  <span>{d.common.deposit}</span>
+                  <b>{car.deposit === 0 ? d.common.noDeposit : formatPrice(car.deposit, locale)}</b>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div class="detail__cta">
+            <a
+              class="btn btn--wa btn--block"
+              href={carWhatsappLink(locale, car.name)}
+              target="_blank"
+              rel="noopener"
+              data-wa="detail"
+            >
+              <Icon name="whatsapp" size={19} />
+              {d.car.whatsappCta}
+            </a>
+            <a class="detail__link" href={reserveHref}>{d.car.reserveLink} →</a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -224,7 +226,7 @@ const reserveHref = `${path('reserve', locale)}?car=${encodeURIComponent(car.slu
   {related.length > 0 && (
     <section class="section section--alt">
       <div class="container">
-        <div class="section-head">
+        <div class="section-head section-head--row">
           <h2>{d.car.relatedHeading}</h2>
         </div>
         <div class="grid grid--cars">

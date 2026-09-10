@@ -1,11 +1,11 @@
 ---
 import Base from '~/layouts/Base.astro';
 import CarCard from '~/components/CarCard.astro';
-import FaqList from '~/components/FaqList.astro';
+import CtaBand from '~/components/CtaBand.astro';
 import Icon from '~/components/Icon.astro';
 import { site } from '~/config/site';
 import { path, t, type Locale } from '~/i18n';
-import { getFeaturedCars, getStartingPrice } from '~/lib/cars';
+import { getFeaturedCars, getPublishedCars, getStartingPrice } from '~/lib/cars';
 import { PLACEHOLDER, resolveImage } from '~/lib/image';
 import { formatPrice } from '~/lib/format';
 import { genericWhatsappLink } from '~/lib/whatsapp';
@@ -18,35 +18,33 @@ const { locale } = Astro.props;
 const d = t(locale);
 
 const db = Astro.locals.runtime.env.DB;
-const [cars, startingPrice] = await Promise.all([getFeaturedCars(db, 6), getStartingPrice(db)]);
+const [featured, allCars, startingPrice] = await Promise.all([
+  getFeaturedCars(db, 3),
+  getPublishedCars(db),
+  getStartingPrice(db),
+]);
 
 const priceLabel = startingPrice !== null ? formatPrice(startingPrice, locale) : '';
 // The <title> carries the cheapest daily rate — a strong CTR signal in the SERP.
 const title = d.home.title.replace('{price}', startingPrice !== null ? String(startingPrice) : '');
 
 /**
- * Hero photograph, in order of preference:
- *   1. PUBLIC_HERO_IMAGE           — an explicit editorial shot
- *   2. the first featured car that has a real photo in the sheet
- *   3. /public/hero-car.jpg        — labelled placeholder, replace with a real photo
- * The demo fleet's grey silhouette is skipped so it never becomes the hero.
+ * Photo strip under the hero (2b runs four, 2a three). An explicit
+ * PUBLIC_HERO_IMAGE leads; real car photos fill the rest. Slots without a
+ * photo keep the hatch ground, as in the mockup.
  */
-const HERO_FALLBACK = '/hero-car.jpg';
-const heroCar = cars.find((car) => car.image && car.image !== PLACEHOLDER) ?? null;
-const heroSource = site.heroImage || heroCar?.image || HERO_FALLBACK;
-const hero = resolveImage(heroSource, { width: 1200, height: 900 });
-const heroAlt =
-  !site.heroImage && heroCar ? d.common.carImageAlt(heroCar.name) : d.home.heroImageAlt;
-
-// Kept from the old hero, now shown in the "why us" section instead.
-const stats = [
-  startingPrice !== null ? { value: priceLabel, label: d.home.stats.price } : null,
-  { value: `${cars.length}`, label: d.home.stats.cars },
-  site.yearsInBusiness ? { value: `${site.yearsInBusiness}+`, label: d.home.stats.years } : null,
-  { value: '24/7', label: d.home.stats.support },
-].filter(Boolean) as { value: string; label: string }[];
-
-const trustIcons = ['whatsapp', 'tag', 'pin', 'shield'] as const;
+const STRIP = 4;
+const photoCars = allCars.filter((car) => car.image && car.image !== PLACEHOLDER);
+const stripSources = [site.heroImage, ...photoCars.map((car) => car.image)].filter(Boolean).slice(0, STRIP);
+const strip = Array.from({ length: STRIP }, (_, index) => {
+  const source = stripSources[index];
+  if (!source) return null;
+  const car = photoCars.find((item) => item.image === source);
+  return {
+    image: resolveImage(source, { width: 800, height: 600 }),
+    alt: car ? d.common.carImageAlt(car.name) : d.home.heroImageAlt,
+  };
+});
 ---
 
 <Base
@@ -57,222 +55,112 @@ const trustIcons = ['whatsapp', 'tag', 'pin', 'shield'] as const;
   ogType="website"
 >
   <section class="hero">
-    <div class="container hero__grid">
-      <div class="hero__copy">
-        <h1 class="hero__title">{d.home.h1}</h1>
+    <div class="container">
+      <div class="hero__grid">
+        <div>
+          <p class="hero__eyebrow">
+            {d.home.eyebrow}
+            {priceLabel && <> · {d.home.priceFrom(priceLabel)}</>}
+          </p>
+          <h1 class="hero__title">
+            {d.home.h1Lines.map((line) => <span>{line}</span>)}
+          </h1>
+          <p class="hero__body">{d.home.heroBody}</p>
 
-        {priceLabel && <p class="hero__price">{d.home.priceFrom(priceLabel)}</p>}
-
-        <div class="hero__body">
-          {d.home.heroBody.map((line) => <p>{line}</p>)}
+          <div class="hero__actions">
+            <a
+              class="btn btn--wa btn--xl"
+              href={genericWhatsappLink(locale)}
+              target="_blank"
+              rel="noopener"
+              data-wa="hero"
+            >
+              {d.home.heroCta}
+            </a>
+            <p class="hero__call">
+              <a href={`tel:${site.phone}`}>{d.home.orCall(site.phoneDisplay)}</a><br />
+              {d.common.hoursShort}
+            </p>
+          </div>
         </div>
 
-        <div class="hero__actions">
-          <a
-            class="btn btn--wa btn--lg"
-            href={genericWhatsappLink(locale)}
-            target="_blank"
-            rel="noopener"
-            data-wa="hero"
-          >
-            <Icon name="whatsapp" size={21} />
-            {d.common.whatsappCta}
-          </a>
-          <a class="btn btn--ghost btn--lg" href={path('cars', locale)}>
-            {d.common.viewCars}
-            <span aria-hidden="true">&#8594;</span>
-          </a>
-        </div>
+        {/*
+          Quick enquiry — the centrepiece of 2a/2b. Posts to the reservation
+          route, which answers with a 303 straight to wa.me, so the shortest
+          path to a conversation still works with JS disabled.
+        */}
+        <form class="quick" method="POST" action={path('reserve', locale)}>
+          <h2 class="quick__title">{d.home.quickHeading}</h2>
 
-        <ul class="hero__trust">
-          {d.home.trustLine.map((item) => (
-            <li>
-              <span class="hero__tick" aria-hidden="true">&#10003;</span>
-              {item}
-            </li>
-          ))}
-        </ul>
+          <div class="quick__row">
+            <div class="field">
+              <label for="q-pickup">{d.home.quickLabels.pickup}</label>
+              <input id="q-pickup" name="pickupDate" type="date" required />
+            </div>
+            <div class="field">
+              <label for="q-return">{d.home.quickLabels.ret}</label>
+              <input id="q-return" name="returnDate" type="date" />
+            </div>
+          </div>
+
+          <div class="field quick__car">
+            <label for="q-car">{d.home.quickLabels.car}</label>
+            <select id="q-car" name="car">
+              <option value="">{d.home.quickAny}</option>
+              {allCars.map((car) => <option value={car.name}>{car.name}</option>)}
+            </select>
+          </div>
+
+          <button class="btn btn--wa btn--block btn--xl quick__submit" type="submit">
+            {d.home.quickSubmit}
+          </button>
+
+          <p class="quick__note">{d.home.quickNote}</p>
+          <p class="quick__call">
+            <a href={`tel:${site.phone}`}>{d.home.orCall(site.phoneDisplay)}</a>
+          </p>
+        </form>
       </div>
 
-      {/*
-        Quick enquiry — the centrepiece of mockup 2a/2b. Posts to the
-        reservation route, which answers with a 303 straight to wa.me, so
-        the shortest path to a conversation still works with JS disabled.
-      */}
-      <form class="quick" method="POST" action={path('reserve', locale)}>
-        <h2 class="quick__title">{d.home.quickHeading}</h2>
-
-        <div class="quick__row">
-          <div class="field">
-            <label for="q-pickup">{d.reserve.labels.pickupDate}</label>
-            <input id="q-pickup" name="pickupDate" type="date" required />
-          </div>
-          <div class="field">
-            <label for="q-return">{d.reserve.labels.returnDate}</label>
-            <input id="q-return" name="returnDate" type="date" />
-          </div>
-        </div>
-
-        <div class="field" style="margin-top:.875rem">
-          <label for="q-car">{d.reserve.labels.car}</label>
-          <select id="q-car" name="car">
-            <option value="">{d.reserve.labels.carAny}</option>
-            {cars.map((car) => <option value={car.name}>{car.name}</option>)}
-          </select>
-        </div>
-
-        <button class="btn btn--wa btn--block btn--lg" type="submit" style="margin-top:1.125rem">
-          <Icon name="whatsapp" size={20} />
-          {d.reserve.submitWhatsapp}
-        </button>
-
-        <p class="quick__note">{d.home.quickNote}</p>
-      </form>
-    </div>
-
-    {/* Photo strip under the hero — 2b runs four; we show the one real photo. */}
-    <div class="container" style="margin-top:clamp(1.75rem,4vw,2.5rem)">
-      <figure class="hero__photo">
-        <img
-          src={hero.src}
-          srcset={hero.srcset || undefined}
-          sizes="(max-width: 1180px) 92vw, 1100px"
-          width={hero.width}
-          height={hero.height}
-          alt={heroAlt}
-          fetchpriority="high"
-          decoding="sync"
-        />
-      </figure>
+      <div class="hero__strip">
+        {strip.map((slot, index) => (
+          <figure>
+            {slot && (
+              <img
+                src={slot.image.src}
+                srcset={slot.image.srcset || undefined}
+                sizes="(max-width: 640px) 33vw, 25vw"
+                width={slot.image.width}
+                height={slot.image.height}
+                alt={slot.alt}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+            )}
+          </figure>
+        ))}
+      </div>
     </div>
   </section>
 
-  <section class="section section--flush" id="fleet">
+  <section class="section section--fleet" id="fleet">
     <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">{d.nav.cars}</span>
+      <div class="section-head section-head--row">
         <h2>{d.home.fleetHeading}</h2>
-        <p>{d.home.fleetSub}</p>
-      </div>
-
-      <div class="grid grid--cars">
-        {cars.map((car, index) => (
-          <CarCard car={car} locale={locale} priority={index < 3} />
-        ))}
-      </div>
-
-      <div class="btn-row" style="margin-top:2rem">
-        <a class="btn btn--brand" href={path('cars', locale)}>
-          {d.home.fleetAll}
-          <Icon name="arrow" size={18} />
+        <a href={path('cars', locale)}>
+          <span class="only-wide">{d.home.fleetAll(allCars.length)}</span>
+          <span class="only-narrow">{d.home.fleetAllShort(allCars.length)}</span>
+          <span aria-hidden="true"> →</span>
         </a>
       </div>
-    </div>
-  </section>
 
-  <section class="section section--alt">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">{d.home.eyebrows.benefits}</span>
-        <h2>{d.home.trustHeading}</h2>
-      </div>
-
-      <div class="grid grid--4">
-        {d.trust.map((item, index) => (
-          <div class="tile">
-            <span class="tile__icon"><Icon name={trustIcons[index] ?? 'check'} size={21} /></span>
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-          </div>
-        ))}
-      </div>
-
-      {stats.length > 0 && (
-        <ul class="stats">
-          {stats.map((stat) => (
-            <li>
-              <b>{stat.value}</b>
-              <span>{stat.label}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">{d.home.eyebrows.how}</span>
-        <h2>{d.home.stepsHeading}</h2>
-      </div>
-
-      <div class="grid grid--3">
-        {d.steps.map((step, index) => (
-          <div class="step">
-            <span class="step__n">{index + 1}</span>
-            <h3>{step.title}</h3>
-            <p class="muted" style="margin:0">{step.text}</p>
-          </div>
+      <div class="grid grid--cars grid--compact">
+        {featured.map((car, index) => (
+          <CarCard car={car} locale={locale} priority={index < 2} />
         ))}
       </div>
     </div>
   </section>
 
-  <section class="section section--alt">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">{d.home.eyebrows.locations}</span>
-        <h2>{d.home.areasHeading}</h2>
-        <p>{d.home.areasText}</p>
-      </div>
-      <ul class="chips">
-        {site.serviceAreas.map((area) => (
-          <li class="pill"><Icon name="pin" size={14} />{area}</li>
-        ))}
-      </ul>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">FAQ</span>
-        <h2>{d.faq.h1}</h2>
-      </div>
-      <FaqList items={d.faq.items.slice(0, 5)} />
-      <div class="btn-row" style="margin-top:1.5rem">
-        <a class="btn btn--ghost" href={path('faq', locale)}>
-          {d.nav.faq}
-          <Icon name="arrow" size={18} />
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <section class="section section--tight">
-    <div class="container">
-      <div class="cta">
-        <h2>{d.home.ctaHeading}</h2>
-        <p>{d.home.ctaText}</p>
-        <div class="btn-row">
-          <a
-            class="btn btn--wa btn--lg"
-            href={genericWhatsappLink(locale)}
-            target="_blank"
-            rel="noopener"
-            data-wa="cta"
-          >
-            <Icon name="whatsapp" size={22} />
-            {d.common.whatsappCta}
-          </a>
-          <a class="btn btn--ghost btn--lg" href={`tel:${site.phone}`}>
-            <Icon name="phone" size={19} />
-            {site.phoneDisplay}
-          </a>
-        </div>
-        <p class="muted" style="margin:1.25rem 0 0;font-size:.9rem">{d.common.whatsappHelper}</p>
-      </div>
-    </div>
-  </section>
+  <CtaBand locale={locale} />
 </Base>
